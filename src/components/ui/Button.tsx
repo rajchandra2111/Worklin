@@ -1,31 +1,32 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'ghost' | 'outline' | 'white';
-  size?: 'default' | 'lg';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
   asChild?: boolean;
 }
 
 export function Button({ 
   className = '', 
   variant = 'primary', 
-  size = 'default', 
+  size = 'md', 
   children, 
   ...props 
 }: ButtonProps) {
   
-  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-medium rounded-pill transition-all duration-150 border-none outline-none cursor-pointer";
+  const baseStyles = "inline-flex items-center justify-center gap-1.5 font-medium rounded-sm transition-all duration-150 border-none outline-none cursor-pointer";
   
   const variants = {
     primary: "bg-accent text-white hover:bg-accent-light",
-    ghost: "bg-transparent text-text-secondary border border-border hover:text-text-primary hover:border-text-muted",
-    outline: "bg-transparent text-accent border-[1.5px] border-accent hover:bg-accent-dim",
-    white: "bg-white text-accent hover:bg-surface",
+    secondary: "bg-surface text-text-primary hover:bg-[#DADADA]",
+    outline: "bg-transparent text-primary border-[1.5px] border-primary hover:bg-accent-light",
+    ghost: "bg-transparent text-text-secondary hover:text-text-primary hover:bg-surface",
   };
   
   const sizes = {
-    default: "text-sm px-[18px] py-[9px]",
-    lg: "text-base px-[28px] py-[13px]",
+    sm: "h-9 px-4 text-[13px] rounded-sm",
+    md: "h-11 px-6 text-sm rounded-md",
+    lg: "h-[52px] px-8 text-[15px] rounded-md",
   };
 
   const combinedClassName = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`;

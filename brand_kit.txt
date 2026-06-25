@@ -1,0 +1,83 @@
+========================================================================
+WORKLIN PLATFORM DESIGN GUIDELINES (V1.0)
+========================================================================
+
+1. BRAND IDENTITY & ASSETS
+------------------------------------------------------------------------
+Brand Name: Worklin
+Tagline: Where work finds its voice. (Freelance Revolution.)
+Logo Assets Directory: /Users/raj/Projects/Hubro/worklin-imgs
+Text Logo Asset: Worklin_
+
+Logo Assets Mapping:
+- Primary Logo (Light mode/headers): Worklin_primary.png
+- Dark Logo (Dark mode/footers): Worklin_dark.png
+- White App Icon (Filled backgrounds): Worklin_icon_white.png
+- Dark App Icon (Light backgrounds): Worklin_icon_dark.png
+
+
+2. COLOR PALETTE & SEMANTIC ROLES
+------------------------------------------------------------------------
+Primary Text & Dark Accents:    #000000 (Black)
+Brand Action & Primary CTA:     #CB4012 (Red Ochre)
+Secondary Action & Hovers:      #C76B4C (Cinnamon Wood)
+Borders, Dividers & Muted:      #DADADA (Alabaster Grey)
+Platform Background:            #FFFFFF (White)
+
+
+3. TYPOGRAPHY & HIERARCHY
+------------------------------------------------------------------------
+Primary Font: Tenor Sans (Brand & Identity)
+Secondary Font: Inter (UI & Data Readability)
+
+Logo & H1 Headings:
+- Font Family: Tenor Sans
+- Styling: Regular weight, Uppercase
+- Tracking/Letter-spacing: +8%
+
+H2 & H3 Subheadings:
+- Font Family: Tenor Sans (Bold) OR Inter (SemiBold)
+- System Rule: Use Tenor Sans for marketing landing pages. Use Inter 
+  for app dashboard cards and internal modules.
+
+Body Text, UI Elements & Form Inputs:
+- Font Family: Inter
+- Styling: Regular weight
+- System Rule: Never use Tenor Sans for long paragraphs, data tables, 
+  form inputs, or micro-copy.
+
+
+4. ICONOGRAPHY STYLE GUIDE
+------------------------------------------------------------------------
+Core Style: Outline / Line icons only. Premium, trustworthy, minimal.
+State Rules: No filled shapes, except for active navigation menu items.
+Technical Canvas: 24x24 px grid base with a 2px inner safe-zone padding.
+Stroke & Caps: Unified 2px stroke weight. Terminals must use Round Caps.
+Geometry: Uniform 2px corner radius. Strict 45° and 90° angles.
+
+Icon Color Mapping:
+- Default State: #000000 (Black)
+- Muted/Disabled State: #DADADA (Alabaster Grey)
+- Hover/Active State: #CB4012 (Red Ochre)
+
+Metaphor Consistency:
+- Freelancer/User: Single-line user avatar silhouette.
+- Jobs/Projects: Minimalist briefcase icon.
+- Contracts/Payments: Simple shield or checkmark icon.
+
+
+5. SPACING, LAYOUT & UI COMPONENTS
+------------------------------------------------------------------------
+The Spacing Scale (8pt Grid):
+All padding, margins, and layout gaps must scale by 8 (8px, 16px, 24px, 
+32px, 48px, 64px). Use 4px only for tight internal element padding.
+
+UI Corners Radius:
+- Buttons & Text Fields: 4px or 6px radius (keeps layout crisp).
+- Cards, Modals & Dropdowns: 8px or 12px radius maximum.
+
+Button Systems:
+- Primary Button: #CB4012 background with #FFFFFF text.
+- Secondary Button: #000000 solid border outline, transparent background.
+- Hover State: Transition background smoothly to #C76B4C.
+========================================================================

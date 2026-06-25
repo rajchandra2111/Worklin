@@ -21,7 +21,7 @@ export function Home() {
             <div className="inline-flex items-center gap-2 text-[13px] font-medium text-white/50 border border-white/10 px-3.5 py-1.5 rounded-pill mb-5">
               For clients
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.1] tracking-tight mb-4">
+            <h1 className="text-4xl md:text-5xl font-tenor font-normal uppercase tracking-[0.08em] leading-[1.1] mb-4">
               Hire the <em className="not-italic text-accent-light">right</em> expert, every time
             </h1>
             <p className="text-base text-white/60 leading-[1.7] mb-[30px] max-w-[460px]">
@@ -104,7 +104,7 @@ export function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-9 gap-4">
             <div>
               <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">Explore skills</p>
-              <h2 className="text-[34px] font-extrabold tracking-tight leading-[1.2] mb-3.5">Find talent by category</h2>
+              <h2 className="text-[34px] font-tenor font-bold leading-[1.2] mb-3.5">Find talent by category</h2>
             </div>
             <Button variant="ghost">All categories →</Button>
           </div>
@@ -139,7 +139,7 @@ export function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-9 gap-4">
             <div>
               <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">Top talent</p>
-              <h2 className="text-[34px] font-extrabold tracking-tight leading-[1.2] mb-3.5">Browse expert freelancers</h2>
+              <h2 className="text-[34px] font-tenor font-bold leading-[1.2] mb-3.5">Browse expert freelancers</h2>
               <p className="text-[15px] text-text-secondary max-w-[500px] mb-0 leading-[1.65]">Click any profile to view full details. Sign up to get in touch.</p>
             </div>
             <Button variant="ghost" onClick={() => openAuthModal('signup', 'client')}>See all freelancers →</Button>
@@ -184,7 +184,7 @@ export function Home() {
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">Why clients choose us</p>
-            <h2 className="text-[34px] font-extrabold tracking-tight leading-[1.2] mb-3.5">Hire with complete confidence</h2>
+            <h2 className="text-[34px] font-tenor font-bold leading-[1.2] mb-3.5">Hire with complete confidence</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
             {[
@@ -210,7 +210,7 @@ export function Home() {
       {/* ESCROW EXPLAINER */}
       <div className="bg-primary text-white py-20 px-6">
         <div className="max-w-[1000px] mx-auto text-center">
-          <h2 className="text-[32px] font-extrabold tracking-tight leading-[1.2] mb-3">How payment protection works</h2>
+          <h2 className="text-[32px] font-tenor font-bold leading-[1.2] mb-3">How payment protection works</h2>
           <p className="text-white/60 mb-12 text-[15px]">Your money is never at risk. Here's exactly how escrow keeps every project safe.</p>
           
           <div className="flex flex-col md:flex-row gap-5 md:gap-0 relative">
@@ -244,7 +244,7 @@ export function Home() {
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">Client stories</p>
-            <h2 className="text-[34px] font-extrabold tracking-tight leading-[1.2] mb-3.5">What clients say</h2>
+            <h2 className="text-[34px] font-tenor font-bold leading-[1.2] mb-3.5">What clients say</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
@@ -274,7 +274,7 @@ export function Home() {
       <div className="bg-accent-dim py-20 px-6 text-center">
         <div className="max-w-[600px] mx-auto">
           <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">Get started today</p>
-          <h2 className="text-[32px] font-extrabold tracking-tight leading-[1.2] mb-2.5">Post your first project in 5 minutes</h2>
+          <h2 className="text-[32px] font-tenor font-bold leading-[1.2] mb-2.5">Post your first project in 5 minutes</h2>
           <p className="text-[15px] text-text-secondary mb-7">Free to post. No subscription. Pay only when you hire.</p>
           <Button size="lg" variant="primary" onClick={() => openAuthModal('signup', 'client')}>
             Post a project →

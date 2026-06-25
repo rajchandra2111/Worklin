@@ -9,26 +9,26 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
       <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between gap-6">
-        <Link to="/" className="text-[26px] text-primary no-underline font-tenor">
-          Worklin<span className="text-accent">_</span>
+        <Link to="/" className="no-underline">
+          <img src="/worklin_primary.png" alt="Worklin" className="h-8" />
         </Link>
         
         <div className="hidden md:flex items-center gap-2">
           <Link 
             to="/for-clients" 
-            className={`text-sm font-medium px-3 py-1.5 rounded-pill transition-colors ${location.pathname === '/for-clients' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
+            className={`text-sm font-medium px-3 py-1.5 rounded-sm transition-colors ${location.pathname === '/for-clients' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
           >
             For Clients
           </Link>
           <Link 
             to="/for-freelancers" 
-            className={`text-sm font-medium px-3 py-1.5 rounded-pill transition-colors ${location.pathname === '/for-freelancers' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
+            className={`text-sm font-medium px-3 py-1.5 rounded-sm transition-colors ${location.pathname === '/for-freelancers' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
           >
             For Freelancers
           </Link>
           <Link 
             to="/browse" 
-            className={`text-sm font-medium px-3 py-1.5 rounded-pill transition-colors ${location.pathname === '/browse' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
+            className={`text-sm font-medium px-3 py-1.5 rounded-sm transition-colors ${location.pathname === '/browse' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
           >
             Browse Projects
           </Link>
