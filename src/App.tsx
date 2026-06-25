@@ -13,6 +13,9 @@ import { FreelancerDashboard } from './pages/dashboard/FreelancerDashboard';
 import { Onboarding } from './pages/dashboard/Onboarding';
 import { PostProject } from './pages/dashboard/PostProject';
 import { ProjectDetails } from './pages/dashboard/ProjectDetails';
+import { ClientSettings } from './pages/dashboard/ClientSettings';
+import { FreelancerSettings } from './pages/dashboard/FreelancerSettings';
+import { PublicProfile } from './pages/PublicProfile';
 
 // Simple wrapper components that just trigger the modal and redirect to home
 function LoginRedirect() {
@@ -46,12 +49,16 @@ function App() {
 
         <Route path="/onboarding" element={<Onboarding />} />
 
+        {/* Public Profile Route */}
+        <Route path="/profile/:id" element={<PublicProfile />} />
+
         <Route element={<ProtectedRoute allowedRoles={['client']} />}>
           <Route path="/client" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ClientDashboard />} />
             <Route path="post-project" element={<PostProject />} />
             <Route path="project/:id/proposals" element={<ClientProjectProposals />} />
+            <Route path="settings" element={<ClientSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
         </Route>
@@ -62,6 +69,7 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<FreelancerDashboard />} />
             <Route path="project/:id" element={<ProjectDetails />} />
+            <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
         </Route>
