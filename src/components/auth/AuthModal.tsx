@@ -39,15 +39,15 @@ export function AuthModal() {
     setError(null);
     
     try {
+      const intendedRole = signupRole || 'client';
+      localStorage.setItem('activeRole', intendedRole);
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-      
-      const intendedRole = signupRole || 'client';
-      localStorage.setItem('activeRole', intendedRole);
       
       closeAuthModal();
       
@@ -72,6 +72,9 @@ export function AuthModal() {
     }
 
     try {
+      const intendedRole = signupRole || 'client';
+      localStorage.setItem('activeRole', intendedRole);
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -81,7 +84,7 @@ export function AuthModal() {
             last_name: lastName,
             full_name: `${firstName} ${lastName}`,
             // We don't need role in metadata anymore, but we can keep it as default
-            role: signupRole || 'client',
+            role: intendedRole,
           },
           emailRedirectTo: window.location.origin,
         },
@@ -93,9 +96,6 @@ export function AuthModal() {
         }
         throw error;
       }
-      
-      const intendedRole = signupRole || 'client';
-      localStorage.setItem('activeRole', intendedRole);
       
       closeAuthModal();
       // AuthContext will handle the redirect
