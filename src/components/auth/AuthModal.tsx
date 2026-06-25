@@ -31,7 +31,13 @@ export function AuthModal() {
     setPassword('');
     setFirstName('');
     setLastName('');
-    setStep('selection');
+    
+    // If a role was pre-selected (e.g. clicking "Join as Freelancer"), skip the selection step
+    if (useUiStore.getState().signupRole) {
+      setStep('form');
+    } else {
+      setStep('selection');
+    }
   }, [authModalTab]);
 
   if (!authModalTab) return null;
