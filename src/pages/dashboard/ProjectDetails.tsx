@@ -15,6 +15,8 @@ export function ProjectDetails() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [existingProposal, setExistingProposal] = useState<any>(null);
+
   // Proposal Form State
   const [showProposalForm, setShowProposalForm] = useState(false);
   const [proposalData, setProposalData] = useState({
@@ -25,7 +27,28 @@ export function ProjectDetails() {
 
   useEffect(() => {
     fetchProjectDetails();
-  }, [id]);
+    if (user) {
+      fetchExistingProposal();
+    }
+  }, [id, user]);
+
+  const fetchExistingProposal = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('proposals')
+        .select('*')
+        .eq('project_id', id)
+        .eq('freelancer_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setExistingProposal(data);
+      }
+    } catch (err) {
+      console.error('Error fetching existing proposal:', err);
+    }
+  };
 
   const fetchProjectDetails = async () => {
     try {
@@ -63,8 +86,8 @@ export function ProjectDetails() {
         project_id: project.id,
         freelancer_id: user.id,
         cover_letter: proposalData.cover_letter,
-        bid_amount: parseFloat(proposalData.bid_amount),
-        delivery_time: proposalData.delivery_time,
+        proposed_rate: parseFloat(proposalData.bid_amount), // Use the correct schema column name
+        estimated_timeline: proposalData.delivery_time, // Use the correct schema column name
         status: 'pending'
       }]);
 
@@ -230,7 +253,29 @@ export function ProjectDetails() {
               </div>
             </div>
 
-            {!showProposalForm && (
+            {existingProposal ? (
+              <div className="bg-surface p-4 rounded-xl border border-border">
+                <h4 className="font-bold text-text-primary mb-3">Your Proposal</h4>
+                <div className="flex justify-between items-center mb-2 text-sm">
+                  <span className="text-text-secondary">Status</span>
+                  <span className={`px-2.5 py-1 rounded-md text-[12px] font-medium capitalize border ${
+                    existingProposal.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200' :
+                    existingProposal.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                    'bg-yellow-50 text-yellow-700 border-yellow-200'
+                  }`}>
+                    {existingProposal.status}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mb-2 text-sm">
+                  <span className="text-text-secondary">Bid Amount</span>
+                  <span className="font-bold text-text-primary">${existingProposal.proposed_rate}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-secondary">Timeline</span>
+                  <span className="text-text-primary">{existingProposal.estimated_timeline}</span>
+                </div>
+              </div>
+            ) : !showProposalForm && (
               <Button 
                 variant="primary" 
                 className="w-full py-3 text-[15px]" 

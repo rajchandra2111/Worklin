@@ -1,27 +1,64 @@
+import { useState, useEffect } from 'react';
 import { FolderOpen, FileText, CreditCard, MessageSquare, Plus, ArrowRight, MoreHorizontal, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function ClientDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchProjects();
+    }
+  }, [user]);
+
+  const fetchProjects = async () => {
+    try {
+      // Fetch projects and the count of their proposals
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          proposals(count)
+        `)
+        .eq('client_id', user!.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeProjectsCount = projects.filter(p => p.status === 'open' || p.status === 'hired').length;
+  // Calculate total pending proposals across all projects
+  // Wait, Supabase returns proposals: [{ count: X }] when doing proposals(count).
+  const pendingProposalsCount = projects.reduce((acc, project) => {
+    const count = project.proposals?.[0]?.count || 0;
+    return acc + count;
+  }, 0);
 
   const stats = [
-    { label: 'Active Projects', value: '3', icon: FolderOpen, color: 'text-accent' },
-    { label: 'Pending Proposals', value: '12', icon: FileText, color: 'text-blue-600' },
-    { label: 'Escrow Balance', value: '$8,450', icon: CreditCard, color: 'text-green-600' },
-    { label: 'Unread Messages', value: '5', icon: MessageSquare, color: 'text-purple-600' },
-  ];
-
-  const recentProjects = [
-    { id: 1, title: 'Full Stack Web App for Real Estate', status: 'Active', proposals: 8, budget: '$5,000', deadline: 'Oct 24' },
-    { id: 2, title: 'Brand Identity & Logo Design', status: 'Sourcing', proposals: 24, budget: '$1,200', deadline: 'Sep 15' },
-    { id: 3, title: 'SEO Optimization for E-commerce', status: 'Completed', proposals: 4, budget: '$800', deadline: 'Aug 30' },
+    { label: 'Active Projects', value: activeProjectsCount.toString(), icon: FolderOpen, color: 'text-accent' },
+    { label: 'Total Proposals', value: pendingProposalsCount.toString(), icon: FileText, color: 'text-blue-600' },
+    { label: 'Escrow Balance', value: '$0', icon: CreditCard, color: 'text-green-600' },
+    { label: 'Unread Messages', value: '0', icon: MessageSquare, color: 'text-purple-600' },
   ];
 
   const statusColors: Record<string, string> = {
-    'Active': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Sourcing': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    'Completed': 'bg-green-50 text-green-700 border-green-200',
+    'open': 'bg-blue-50 text-blue-700 border-blue-200',
+    'hired': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    'completed': 'bg-green-50 text-green-700 border-green-200',
+    'cancelled': 'bg-red-50 text-red-700 border-red-200',
   };
 
   return (
@@ -60,46 +97,62 @@ export function ClientDashboard() {
         {/* Main Content Area (Projects) */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-[20px] font-bold font-tenor">Recent Projects</h2>
-            <Button variant="ghost" size="sm" className="text-text-secondary">View All</Button>
+            <h2 className="text-[20px] font-bold font-tenor">Your Projects</h2>
           </div>
           
           <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-            <div className="flex flex-col divide-y divide-border">
-              {recentProjects.map((project) => (
-                <div key={project.id} className="p-6 hover:bg-surface/50 transition-colors group cursor-pointer">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-[16px] text-text-primary group-hover:text-accent transition-colors">
-                      {project.title}
-                    </h3>
-                    <button className="text-text-muted hover:text-text-primary bg-transparent border-none cursor-pointer">
-                      <MoreHorizontal size={18} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
-                    <span className={`px-2.5 py-1 rounded-md text-[12px] font-medium border ${statusColors[project.status]}`}>
-                      {project.status}
-                    </span>
-                    <span className="text-text-secondary flex items-center gap-1.5">
-                      <FileText size={14} /> {project.proposals} Proposals
-                    </span>
-                    <span className="text-text-secondary flex items-center gap-1.5">
-                      <CreditCard size={14} /> {project.budget}
-                    </span>
-                  </div>
+            {loading ? (
+              <div className="flex justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="p-8 text-center text-text-secondary">
+                You haven't posted any projects yet.
+              </div>
+            ) : (
+              <div className="flex flex-col divide-y divide-border">
+                {projects.map((project) => {
+                  const proposalCount = project.proposals?.[0]?.count || 0;
+                  return (
+                    <div 
+                      key={project.id} 
+                      className="p-6 hover:bg-surface/50 transition-colors group cursor-pointer"
+                      onClick={() => navigate(`/client/project/${project.id}/proposals`)}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="font-semibold text-[16px] text-text-primary group-hover:text-accent transition-colors">
+                          {project.title}
+                        </h3>
+                        <button className="text-text-muted hover:text-text-primary bg-transparent border-none cursor-pointer">
+                          <MoreHorizontal size={18} />
+                        </button>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
+                        <span className={`px-2.5 py-1 rounded-md text-[12px] font-medium border capitalize ${statusColors[project.status] || 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                          {project.status}
+                        </span>
+                        <span className="text-text-secondary flex items-center gap-1.5">
+                          <FileText size={14} /> {proposalCount} Proposals
+                        </span>
+                        <span className="text-text-secondary flex items-center gap-1.5">
+                          <CreditCard size={14} /> {project.budget} ({project.budget_type})
+                        </span>
+                      </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                    <span className="text-xs text-text-muted flex items-center gap-1.5">
-                      <Clock size={14} /> Deadline: {project.deadline}
-                    </span>
-                    <span className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Manage Project <ArrowRight size={14} />
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                        <span className="text-xs text-text-muted flex items-center gap-1.5">
+                          <Clock size={14} /> Posted {new Date(project.created_at).toLocaleDateString()}
+                        </span>
+                        <span className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          View Proposals <ArrowRight size={14} />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -115,22 +168,8 @@ export function ClientDashboard() {
               <div>
                 <h4 className="text-sm font-semibold mb-1">Review new proposals</h4>
                 <p className="text-[13px] text-text-secondary leading-relaxed">
-                  You have 8 new proposals for "Brand Identity & Logo Design".
+                  You have {pendingProposalsCount} total proposals to review.
                 </p>
-                <Button variant="outline" size="sm" className="mt-3 w-full">Review Now</Button>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 shrink-0">
-                <CheckCircle size={18} />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold mb-1">Approve Milestone</h4>
-                <p className="text-[13px] text-text-secondary leading-relaxed">
-                  Freelancer submitted work for "Full Stack Web App".
-                </p>
-                <Button variant="outline" size="sm" className="mt-3 w-full">View Submission</Button>
               </div>
             </div>
           </div>

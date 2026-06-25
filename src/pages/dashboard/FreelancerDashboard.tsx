@@ -1,26 +1,55 @@
+import { useState, useEffect } from 'react';
 import { FileText, Briefcase, DollarSign, Search, ArrowRight, MoreHorizontal, Clock, Star } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function FreelancerDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [activeBids, setActiveBids] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchBids();
+    }
+  }, [user]);
+
+  const fetchBids = async () => {
+    try {
+      // Also fetching client_profiles within projects is tricky without a direct join, 
+      // but project has client:client_profiles. Let's get it:
+      const { data, error } = await supabase
+        .from('proposals')
+        .select(`
+          *,
+          project:projects (
+            title,
+            budget,
+            budget_type,
+            client:client_profiles(full_name)
+          )
+        `)
+        .eq('freelancer_id', user!.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setActiveBids(data || []);
+    } catch (err) {
+      console.error('Error fetching bids:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const stats = [
-    { label: 'Open Proposals', value: '4', icon: FileText, color: 'text-accent' },
-    { label: 'Active Contracts', value: '2', icon: Briefcase, color: 'text-blue-600' },
-    { label: 'Available Balance', value: '$1,200', icon: DollarSign, color: 'text-green-600' },
-    { label: 'Job Success', value: '98%', icon: Star, color: 'text-yellow-500' },
-  ];
-
-  const recommendedProjects = [
-    { id: 1, title: 'Senior React Developer for Fintech Dashboard', client: 'FinServe Inc', budget: '$60/hr', type: 'Hourly', posted: '2h ago' },
-    { id: 2, title: 'Build a Next.js Marketing Site', client: 'WebStudio', budget: '$2,500', type: 'Fixed', posted: '5h ago' },
-    { id: 3, title: 'Supabase Database Optimization', client: 'StartupX', budget: '$800', type: 'Fixed', posted: '1d ago' },
-  ];
-
-  const activeContracts = [
-    { id: 1, title: 'E-commerce React Migration', client: 'RetailCo', status: 'In Progress', nextMilestone: '$1,500' },
-    { id: 2, title: 'API Integration & Webhooks', client: 'SaaS Platform', status: 'In Review', nextMilestone: '$400' },
+    { label: 'Active Proposals', value: activeBids.length.toString(), icon: FileText, color: 'text-accent' },
+    { label: 'Active Contracts', value: activeBids.filter(b => b.status === 'accepted').length.toString(), icon: Briefcase, color: 'text-blue-600' },
+    { label: 'Available Balance', value: '$0', icon: DollarSign, color: 'text-green-600' },
+    { label: 'Job Success', value: '100%', icon: Star, color: 'text-yellow-500' },
   ];
 
   return (
@@ -31,7 +60,7 @@ export function FreelancerDashboard() {
           <h1 className="text-[28px] font-tenor font-bold mb-1">My Workspace</h1>
           <p className="text-text-secondary text-sm">Here is a summary of your freelance business today.</p>
         </div>
-        <Button variant="primary" onClick={() => navigate('/freelancer/browse')} className="flex items-center gap-2">
+        <Button variant="primary" onClick={() => navigate('/browse')} className="flex items-center gap-2">
           <Search size={18} />
           Find Work
         </Button>
@@ -56,46 +85,58 @@ export function FreelancerDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content Area (Projects) */}
+        {/* Main Content Area (Active Bids) */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Recommended Projects */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[20px] font-bold font-tenor">Recommended for You</h2>
-              <Button variant="ghost" size="sm" className="text-text-secondary">View More</Button>
+              <h2 className="text-[20px] font-bold font-tenor">Your Active Bids</h2>
             </div>
             
             <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-              <div className="flex flex-col divide-y divide-border">
-                {recommendedProjects.map((project) => (
-                  <div key={project.id} className="p-6 hover:bg-surface/50 transition-colors group cursor-pointer">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-[16px] text-text-primary group-hover:text-accent transition-colors">
-                        {project.title}
-                      </h3>
-                      <button className="text-text-muted hover:text-accent bg-transparent border-none cursor-pointer">
-                        <Star size={18} />
-                      </button>
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
-                      <span className="text-text-secondary font-medium">{project.type}</span>
-                      <span className="text-text-primary font-semibold">{project.budget}</span>
-                      <span className="text-text-secondary">Client: {project.client}</span>
-                    </div>
+              {loading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                </div>
+              ) : activeBids.length === 0 ? (
+                <div className="p-8 text-center text-text-secondary">
+                  You haven't submitted any proposals yet.
+                </div>
+              ) : (
+                <div className="flex flex-col divide-y divide-border">
+                  {activeBids.map((bid) => (
+                    <div key={bid.id} className="p-6 hover:bg-surface/50 transition-colors group cursor-pointer" onClick={() => navigate(`/freelancer/project/${bid.project_id}`)}>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-semibold text-[16px] text-text-primary group-hover:text-accent transition-colors">
+                          {bid.project?.title}
+                        </h3>
+                        <span className={`px-2.5 py-1 rounded-md text-[12px] font-medium capitalize border ${
+                          bid.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200' :
+                          bid.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                          'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        }`}>
+                          {bid.status}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
+                        <span className="text-text-primary font-semibold">${bid.proposed_rate}</span>
+                        <span className="text-text-secondary font-medium">{bid.estimated_timeline}</span>
+                        <span className="text-text-secondary">Client: {bid.project?.client?.full_name || 'Anonymous'}</span>
+                      </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                      <span className="text-xs text-text-muted flex items-center gap-1.5">
-                        <Clock size={14} /> Posted {project.posted}
-                      </span>
-                      <span className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        Submit Proposal <ArrowRight size={14} />
-                      </span>
+                      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                        <span className="text-xs text-text-muted flex items-center gap-1.5">
+                          <Clock size={14} /> Bid submitted {new Date(bid.created_at).toLocaleDateString()}
+                        </span>
+                        <span className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          View Project <ArrowRight size={14} />
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           
@@ -105,34 +146,8 @@ export function FreelancerDashboard() {
         <div className="space-y-6">
           <h2 className="text-[20px] font-bold font-tenor">Active Contracts</h2>
           
-          <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-            <div className="flex flex-col divide-y divide-border">
-              {activeContracts.map((contract) => (
-                <div key={contract.id} className="p-5 hover:bg-surface/50 transition-colors cursor-pointer group">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-[14px] font-semibold text-text-primary leading-tight pr-4">
-                      {contract.title}
-                    </h4>
-                    <MoreHorizontal size={16} className="text-text-muted shrink-0" />
-                  </div>
-                  <p className="text-xs text-text-secondary mb-3">{contract.client}</p>
-                  
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] text-text-muted uppercase font-semibold tracking-wider mb-1">Status</span>
-                      <span className="text-[13px] font-medium text-blue-600">{contract.status}</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-[11px] text-text-muted uppercase font-semibold tracking-wider mb-1">Next Milestone</span>
-                      <span className="text-[13px] font-bold text-text-primary">{contract.nextMilestone}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="p-3 border-t border-border bg-surface text-center">
-              <Button variant="ghost" size="sm" className="text-text-secondary w-full text-xs">View All Contracts</Button>
-            </div>
+          <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden p-6 text-center text-sm text-text-secondary">
+            Your accepted bids will appear here as active contracts.
           </div>
         </div>
       </div>
