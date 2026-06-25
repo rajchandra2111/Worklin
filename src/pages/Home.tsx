@@ -21,10 +21,10 @@ export function Home() {
   // If user is already logged in, send them to their dashboard
   if (user) {
     if (role) {
+      // They have a verified profile for the role they chose to log in as
       return <Navigate to={`/${role}/dashboard`} replace />;
-    } else if (user.user_metadata?.role) {
-      return <Navigate to={`/${user.user_metadata.role}/dashboard`} replace />;
     } else {
+      // They chose a role (e.g. Freelancer), but don't have a profile for it yet
       return <Navigate to="/onboarding" replace />;
     }
   }
