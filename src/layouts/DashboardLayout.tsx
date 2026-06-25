@@ -37,7 +37,7 @@ export function DashboardLayout() {
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-white border-r border-border flex flex-col">
         <div className="p-6 border-b border-border flex items-center justify-between">
-          <Link to="/" className="text-[22px] text-primary no-underline font-tenor tracking-widest">
+          <Link to={role === 'client' ? '/client/dashboard' : '/freelancer/dashboard'} className="text-[22px] text-primary no-underline font-tenor tracking-widest">
             Worklin<span className="text-accent">_</span>
           </Link>
         </div>

@@ -75,7 +75,7 @@ export function FreelancerDashboard() {
           <h1 className="text-[28px] font-tenor font-bold mb-1">My Workspace</h1>
           <p className="text-text-secondary text-sm">Here is a summary of your freelance business today.</p>
         </div>
-        <Button variant="primary" onClick={() => navigate('/browse')} className="flex items-center gap-2">
+        <Button variant="primary" onClick={() => navigate('/freelancer/browse')} className="flex items-center gap-2">
           <Search size={18} />
           Find Work
         </Button>
@@ -158,7 +158,7 @@ export function FreelancerDashboard() {
           <div>
             <div className="flex items-center justify-between mb-4 mt-12">
               <h2 className="text-[20px] font-bold font-tenor">Recommended for You</h2>
-              <Button variant="ghost" size="sm" className="text-text-secondary" onClick={() => navigate('/browse')}>View More</Button>
+              <Button variant="ghost" size="sm" className="text-text-secondary" onClick={() => navigate('/freelancer/browse')}>View More</Button>
             </div>
             
             <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
