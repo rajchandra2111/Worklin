@@ -1,9 +1,33 @@
 import { useUiStore } from '../store/uiStore';
+import { useAuth } from '../contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Monitor, Palette, TrendingUp, PenTool, BarChart3, Video, Scale, Headphones, ShieldCheck, BadgeCheck, MessageSquare, Zap, Globe, ShieldAlert, ClipboardList, CreditCard, Settings, CheckCircle2, PartyPopper } from 'lucide-react';
 
 export function Home() {
   const { openAuthModal } = useUiStore();
+  const { user, role, isLoading } = useAuth();
+
+  // If Auth is still loading on initial visit, we can either wait or show the page.
+  // Wait prevents a flash of the landing page before redirecting.
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
+
+  // If user is already logged in, send them to their dashboard
+  if (user) {
+    if (role) {
+      return <Navigate to={`/${role}/dashboard`} replace />;
+    } else if (user.user_metadata?.role) {
+      return <Navigate to={`/${user.user_metadata.role}/dashboard`} replace />;
+    } else {
+      return <Navigate to="/onboarding" replace />;
+    }
+  }
 
   return (
     <div>
