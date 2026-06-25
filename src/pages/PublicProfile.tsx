@@ -19,7 +19,7 @@ export function PublicProfile() {
     try {
       setLoading(true);
       // Try freelancer first
-      const { data: freelancerData, error: fError } = await supabase
+      const { data: freelancerData } = await supabase
         .from('freelancer_profiles')
         .select('*')
         .eq('id', profileId)
@@ -32,7 +32,7 @@ export function PublicProfile() {
       }
 
       // Try client
-      const { data: clientData, error: cError } = await supabase
+      const { data: clientData } = await supabase
         .from('client_profiles')
         .select('*')
         .eq('id', profileId)
