@@ -1,5 +1,9 @@
+-- Clean up previous failed attempts
+DROP TABLE IF EXISTS public.client_profiles CASCADE;
+DROP TABLE IF EXISTS public.freelancer_profiles CASCADE;
+
 -- Create Client Profiles
-CREATE TABLE IF NOT EXISTS public.client_profiles (
+CREATE TABLE public.client_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     first_name TEXT,
     last_name TEXT,
@@ -11,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.client_profiles (
 );
 
 -- Create Freelancer Profiles
-CREATE TABLE IF NOT EXISTS public.freelancer_profiles (
+CREATE TABLE public.freelancer_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     first_name TEXT,
     last_name TEXT,
@@ -38,12 +42,12 @@ CREATE POLICY "Users can insert their own freelancer profile." ON public.freelan
 CREATE POLICY "Users can update their own freelancer profile." ON public.freelancer_profiles FOR UPDATE USING (auth.uid() = id);
 
 -- Migrate existing users based on their role
-INSERT INTO public.client_profiles (id, first_name, last_name, full_name, company_name)
-SELECT id, first_name, last_name, full_name, company_name FROM public.users WHERE role = 'client'
+INSERT INTO public.client_profiles (id, full_name, company_name)
+SELECT id, full_name, company_name FROM public.users WHERE role = 'client'
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.freelancer_profiles (id, first_name, last_name, full_name, skills)
-SELECT id, first_name, last_name, full_name, skills FROM public.users WHERE role = 'freelancer'
+INSERT INTO public.freelancer_profiles (id, full_name, skills)
+SELECT id, full_name, skills FROM public.users WHERE role = 'freelancer'
 ON CONFLICT (id) DO NOTHING;
 
 -- Update foreign keys to allow automatic GraphQL/PostgREST joins
