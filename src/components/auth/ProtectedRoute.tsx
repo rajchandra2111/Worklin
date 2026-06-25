@@ -29,12 +29,11 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to="/" replace />;
   }
 
-  // Check if they need onboarding (Google Auth without role)
-  if (!user.user_metadata?.role) {
+  if (!role) {
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (allowedRoles && role && !allowedRoles.includes(role as any)) {
+  if (allowedRoles && !allowedRoles.includes(role as any)) {
     // If they are logged in but don't have the right role, send them to their own dashboard
     return <Navigate to={`/${role}/dashboard`} replace />;
   }
