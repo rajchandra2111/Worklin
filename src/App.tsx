@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Home } from './pages/Home';
-import { ForClients } from './pages/ForClients';
-import { ForFreelancers } from './pages/ForFreelancers';
+import { HireFreelancers } from './pages/HireFreelancers';
+import { BrowseProjects } from './pages/BrowseProjects';
 import { useEffect } from 'react';
 import { useUiStore } from './store/uiStore';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -11,7 +11,6 @@ import { ClientDashboard } from './pages/dashboard/ClientDashboard';
 import { FreelancerDashboard } from './pages/dashboard/FreelancerDashboard';
 import { Onboarding } from './pages/dashboard/Onboarding';
 import { PostProject } from './pages/dashboard/PostProject';
-import { BrowseProjects } from './pages/dashboard/BrowseProjects';
 import { ProjectDetails } from './pages/dashboard/ProjectDetails';
 
 // Simple wrapper components that just trigger the modal and redirect to home
@@ -38,11 +37,10 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="for-clients" element={<ForClients />} />
-          <Route path="for-freelancers" element={<ForFreelancers />} />
+          <Route path="hire" element={<HireFreelancers />} />
+          <Route path="browse" element={<BrowseProjects />} />
           <Route path="login" element={<LoginRedirect />} />
           <Route path="signup" element={<SignupRedirect />} />
-          <Route path="browse" element={<Navigate to="/#browse-freelancers" replace />} />
         </Route>
 
         <Route path="/onboarding" element={<Onboarding />} />
@@ -62,7 +60,6 @@ function App() {
           <Route path="/freelancer" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<FreelancerDashboard />} />
-            <Route path="browse" element={<BrowseProjects />} />
             <Route path="project/:id" element={<ProjectDetails />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>

@@ -15,16 +15,10 @@ export function Navbar() {
         
         <div className="hidden md:flex items-center gap-2">
           <Link 
-            to="/for-clients" 
-            className={`text-sm font-medium px-3 py-1.5 rounded-sm transition-colors ${location.pathname === '/for-clients' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
+            to="/hire" 
+            className={`text-sm font-medium px-3 py-1.5 rounded-sm transition-colors ${location.pathname === '/hire' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
           >
-            For Clients
-          </Link>
-          <Link 
-            to="/for-freelancers" 
-            className={`text-sm font-medium px-3 py-1.5 rounded-sm transition-colors ${location.pathname === '/for-freelancers' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
-          >
-            For Freelancers
+            Hire Freelancers
           </Link>
           <Link 
             to="/browse" 

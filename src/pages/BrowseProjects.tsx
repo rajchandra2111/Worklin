@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { Search, MapPin, Clock, DollarSign, Filter, ArrowRight } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
+import { Button } from '../components/ui/Button';
+import { useUiStore } from '../store/uiStore';
 
 export function BrowseProjects() {
   const navigate = useNavigate();
+  const { openAuthModal } = useUiStore();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,8 +48,26 @@ export function BrowseProjects() {
   };
 
   return (
-    <div className="pb-12 max-w-5xl mx-auto">
+    <div className="pb-12 max-w-5xl mx-auto px-6">
       
+      {/* Hero Section */}
+      <div className="py-16 text-center max-w-[800px] mx-auto border-b border-border mb-12">
+        <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">For Freelancers</p>
+        <h1 className="text-4xl md:text-5xl font-tenor font-normal uppercase tracking-[0.08em] leading-tight mb-5">
+          Find rewarding projects and grow your career
+        </h1>
+        <p className="text-base text-text-secondary mb-8 max-w-[600px] mx-auto">
+          Join thousands of businesses hiring on <span className="font-tenor font-semibold tracking-tight text-primary">Worklin_</span>. Low fees, guaranteed payments, and a global talent pool.
+        </p>
+        <Button size="lg" variant="primary" onClick={() => openAuthModal('signup', 'freelancer')}>
+          Join as a freelancer
+        </Button>
+      </div>
+
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-[28px] font-tenor font-bold">Explore Open Projects</h2>
+      </div>
+
       {/* Search Header */}
       <div className="bg-white p-6 rounded-xl border border-border shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center">
         <div className="flex-1 relative w-full">
@@ -62,8 +82,6 @@ export function BrowseProjects() {
           <Filter size={18} /> Filters
         </Button>
       </div>
-
-      <h1 className="text-[28px] font-tenor font-bold mb-6">Explore Open Projects</h1>
 
       {loading ? (
         <div className="flex justify-center p-12">
