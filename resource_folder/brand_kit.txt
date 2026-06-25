@@ -6,7 +6,7 @@ WORKLIN PLATFORM DESIGN GUIDELINES (V1.0)
 ------------------------------------------------------------------------
 Brand Name: Worklin
 Tagline: Where work finds its voice. (Freelance Revolution.)
-Logo Assets Directory: /Users/raj/Projects/Hubro/worklin-imgs
+Logo Assets Directory: /Users/raj/Projects/Hubro/resource_folder/worklin-imgs
 Text Logo Asset: Worklin_
 
 Logo Assets Mapping:
