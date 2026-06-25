@@ -9,8 +9,8 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
       <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between gap-6">
-        <Link to="/" className="text-xl font-extrabold text-primary no-underline tracking-tight">
-          Work<span className="text-accent">lin</span>
+        <Link to="/" className="text-[26px] text-primary no-underline font-tenor">
+          Worklin<span className="text-accent">_</span>
         </Link>
         
         <div className="hidden md:flex items-center gap-2">

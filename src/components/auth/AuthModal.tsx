@@ -34,7 +34,7 @@ export function AuthModal() {
         {authModalTab === 'login' && (
           <div>
             <h3 className="text-[22px] font-bold mb-1.5">Welcome back</h3>
-            <p className="text-sm text-text-secondary mb-6">Log in to your Worklin account</p>
+            <p className="text-sm text-text-secondary mb-6">Log in to your <span className="font-tenor font-semibold tracking-tight text-primary">Worklin_</span> account</p>
             
             <button className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
               <GoogleIcon />

@@ -25,7 +25,7 @@ export function Home() {
               Hire the <em className="not-italic text-accent-light">right</em> expert, every time
             </h1>
             <p className="text-base text-white/60 leading-[1.7] mb-[30px] max-w-[460px]">
-              Post a project, receive bids from vetted professionals, and pay only when you're satisfied. Thousands of clients trust Worklin every day.
+              Post a project, receive bids from vetted professionals, and pay only when you're satisfied. Thousands of clients trust <span className="font-tenor font-semibold tracking-tight">Worklin_</span> every day.
             </p>
             <div className="flex flex-wrap gap-3 mb-9">
               <Button size="lg" variant="primary" onClick={() => openAuthModal('signup', 'client')}>
@@ -190,7 +190,7 @@ export function Home() {
             {[
               { icon: ShieldCheck, t: 'Secure escrow payments', d: "Your money is held safely and only released when you've approved the final work. No risk of paying for nothing." },
               { icon: BadgeCheck, t: 'Verified professionals', d: "Every freelancer's identity and skills are verified. Real reviews from real clients. You see exactly who you're hiring." },
-              { icon: MessageSquare, t: 'All communication in one place', d: "Chat, share files, and track progress directly in Worklin. No need to juggle email, Slack, and Google Drive." },
+              { icon: MessageSquare, t: 'All communication in one place', d: "Chat, share files, and track progress directly in Worklin_. No need to juggle email, Slack, and Google Drive." },
               { icon: Zap, t: 'Bids arrive fast', d: "Post a project and typically receive your first bids within 30 minutes. Compare, shortlist, and hire the same day." },
               { icon: Globe, t: 'Global talent pool', d: "Access 48,000+ freelancers across 180 countries. Find the right expertise at the right price for your budget." },
               { icon: ShieldAlert, t: 'Dispute protection', d: "If something goes wrong, our team mediates and protects both parties. You're never left without recourse." }
@@ -216,7 +216,7 @@ export function Home() {
           <div className="flex flex-col md:flex-row gap-5 md:gap-0 relative">
             {[
               { icon: ClipboardList, t: 'Accept a bid', d: 'Choose the freelancer and agree on scope' },
-              { icon: CreditCard, t: 'Fund escrow', d: 'Pay into the secure Worklin escrow account' },
+              { icon: CreditCard, t: 'Fund escrow', d: 'Pay into the secure Worklin_ escrow account' },
               { icon: Settings, t: 'Work happens', d: 'Freelancer delivers, you chat and review' },
               { icon: CheckCircle2, t: 'Approve & release', d: 'Happy? Release funds. Not happy? Dispute.' },
               { icon: PartyPopper, t: 'Project done', d: 'Leave a review and close the project' }
@@ -248,9 +248,9 @@ export function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              { q: `"We hired a React developer through Worklin and had production-ready code in 2 weeks. The escrow gave us peace of mind from day one."`, initials: 'MR', bgClass: 'bg-primary', n: 'Marco Rossi', co: 'CTO, Stackly' },
+              { q: `"We hired a React developer through Worklin_ and had production-ready code in 2 weeks. The escrow gave us peace of mind from day one."`, initials: 'MR', bgClass: 'bg-primary', n: 'Marco Rossi', co: 'CTO, Stackly' },
               { q: `"I posted a branding project and had 12 quality bids in the first hour. Found the perfect designer and the whole thing took 3 days."`, initials: 'AV', bgClass: 'bg-accent', n: 'Anna Visser', co: 'Founder, Plantr' },
-              { q: `"The messaging and file sharing inside Worklin meant I never had to leave the platform. Incredibly smooth from first bid to final payment."`, initials: 'TK', bgClass: 'bg-accent-light', n: 'Tom Klein', co: 'Head of Product, Novarise' }
+              { q: `"The messaging and file sharing inside Worklin_ meant I never had to leave the platform. Incredibly smooth from first bid to final payment."`, initials: 'TK', bgClass: 'bg-accent-light', n: 'Tom Klein', co: 'Head of Product, Novarise' }
             ].map((test, i) => (
               <div key={i} className="bg-surface rounded-lg p-6 border border-border transition-all duration-300 hover:shadow-card hover:-translate-y-1">
                 <div className="text-warning text-[13px] mb-2.5">★★★★★</div>
