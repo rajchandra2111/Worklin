@@ -102,6 +102,12 @@ export function AuthModal() {
 
   const handleGoogleAuth = async () => {
     try {
+      if (authModalTab === 'signup') {
+        localStorage.setItem('intendedRole', signupRole || 'client');
+      } else {
+        localStorage.removeItem('intendedRole');
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

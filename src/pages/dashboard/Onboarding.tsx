@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -27,31 +27,41 @@ export function Onboarding() {
     return <Navigate to={`/${role || hasMetadataRole}/dashboard`} replace />;
   }
 
-  const handleComplete = async () => {
-    if (!selectedRole) return;
+  useEffect(() => {
+    const intendedRole = localStorage.getItem('intendedRole') as 'client' | 'freelancer' | null;
+    if (intendedRole && !hasMetadataRole && !loading) {
+      handleComplete(intendedRole);
+    }
+  }, [hasMetadataRole]);
+
+  const handleComplete = async (roleToSet: 'client' | 'freelancer') => {
+    if (!roleToSet) return;
     setLoading(true);
     setError(null);
 
     try {
       // 1. Update auth metadata so we don't trigger onboarding again
       const { error: authError } = await supabase.auth.updateUser({
-        data: { role: selectedRole }
+        data: { role: roleToSet }
       });
       if (authError) throw authError;
 
       // 2. Update public.users table
       const { error: dbError } = await supabase
         .from('users')
-        .update({ role: selectedRole })
+        .update({ role: roleToSet })
         .eq('id', user.id);
         
       if (dbError) throw dbError;
 
       // 3. Update AuthContext state
-      await fetchRole(user.id, selectedRole);
+      await fetchRole(user.id, roleToSet);
+      
+      // Clean up localStorage
+      localStorage.removeItem('intendedRole');
 
       // 4. Navigate to correct dashboard
-      navigate(`/${selectedRole}/dashboard`);
+      navigate(`/${roleToSet}/dashboard`);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to complete onboarding.');
@@ -108,9 +118,9 @@ export function Onboarding() {
 
         <Button 
           variant="primary" 
-          className="w-full py-3" 
+          className="w-full mt-4" 
           disabled={!selectedRole || loading}
-          onClick={handleComplete}
+          onClick={() => handleComplete(selectedRole!)}
         >
           {loading ? 'Setting up...' : 'Continue'}
         </Button>
