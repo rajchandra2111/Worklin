@@ -1,13 +1,49 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, FileText, FolderOpen, MessageSquare, 
   CreditCard, Star, Settings, Briefcase, Search, DollarSign, LogOut 
 } from 'lucide-react';
 
 export function DashboardLayout() {
-  const { role, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<{name: string, avatar: string, id: string} | null>(null);
+
+  useEffect(() => {
+    if (user && role) {
+      fetchProfile();
+    }
+  }, [user, role]);
+
+  const fetchProfile = async () => {
+    try {
+      if (role === 'client') {
+        const { data } = await supabase.from('client_profiles').select('full_name, company_name, company_logo, first_name').eq('id', user?.id).single();
+        if (data) {
+          setProfile({
+            name: data.company_name || data.full_name || data.first_name,
+            avatar: data.company_logo || '',
+            id: user!.id
+          });
+        }
+      } else if (role === 'freelancer') {
+        const { data } = await supabase.from('freelancer_profiles').select('full_name, avatar_url, first_name').eq('id', user?.id).single();
+        if (data) {
+          setProfile({
+            name: data.full_name || data.first_name,
+            avatar: data.avatar_url || '',
+            id: user!.id
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching profile for layout:', err);
+    }
+  };
 
   const clientLinks = [
     { name: 'Dashboard', path: '/client/dashboard', icon: LayoutDashboard },
@@ -31,6 +67,12 @@ export function DashboardLayout() {
   ];
 
   const links = role === 'client' ? clientLinks : freelancerLinks;
+
+  const handleProfileClick = () => {
+    if (profile?.id) {
+      navigate(`/profile/${profile.id}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-surface flex flex-col md:flex-row">
@@ -64,7 +106,26 @@ export function DashboardLayout() {
           })}
         </nav>
         
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-border space-y-4">
+          {profile && (
+            <div 
+              onClick={handleProfileClick}
+              className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-surface rounded-md transition-colors"
+            >
+              <div className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
+                {profile.avatar ? (
+                  <img src={profile.avatar.startsWith('http') ? profile.avatar : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar}`} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  profile.name?.[0] || 'U'
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-text-primary truncate">{profile.name}</div>
+                <div className="text-[11px] text-text-secondary truncate">View Public Profile</div>
+              </div>
+            </div>
+          )}
+          
           <button 
             onClick={signOut}
             className="flex w-full items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium text-text-secondary hover:bg-surface hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none outline-none"
