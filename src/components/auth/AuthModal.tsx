@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { Button } from '../ui/Button';
-import { Building2, Briefcase } from 'lucide-react';
+import { Building2, Briefcase, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export function AuthModal() {
   const { authModalTab, signupRole, closeAuthModal, openAuthModal, setSignupRole } = useUiStore();
+
+  const [step, setStep] = useState<'selection' | 'form'>('selection');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,6 +31,7 @@ export function AuthModal() {
     setPassword('');
     setFirstName('');
     setLastName('');
+    setStep('selection');
   }, [authModalTab]);
 
   if (!authModalTab) return null;
@@ -50,9 +53,6 @@ export function AuthModal() {
       if (error) throw error;
       
       closeAuthModal();
-      
-      // We don't navigate directly here anymore. AuthContext will verify the role 
-      // and update the state, which then causes Home.tsx or App.tsx to redirect safely.
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {
@@ -83,7 +83,6 @@ export function AuthModal() {
             first_name: firstName,
             last_name: lastName,
             full_name: `${firstName} ${lastName}`,
-            // We don't need role in metadata anymore, but we can keep it as default
             role: intendedRole,
           },
           emailRedirectTo: window.location.origin,
@@ -98,7 +97,6 @@ export function AuthModal() {
       }
       
       closeAuthModal();
-      // AuthContext will handle the redirect
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
     } finally {
@@ -129,182 +127,208 @@ export function AuthModal() {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeAuthModal();
       }}
     >
-      <div className="bg-white rounded-xl p-10 w-full max-w-[440px] relative shadow-card">
+      <div className="bg-white rounded-[20px] p-10 w-full max-w-[440px] relative shadow-float transition-all duration-300">
         <button 
-          className="absolute top-4 right-4 bg-none border-none text-[22px] cursor-pointer text-text-muted hover:text-text-primary transition-colors"
+          className="absolute top-5 right-5 bg-surface hover:bg-border w-8 h-8 rounded-full border-none text-[18px] flex items-center justify-center cursor-pointer text-text-muted hover:text-text-primary transition-colors"
           onClick={closeAuthModal}
         >
           ✕
         </button>
 
-        {authModalTab === 'login' && (
-          <form onSubmit={handleLogin}>
-            <h3 className="text-[22px] font-bold mb-1.5">Welcome back</h3>
-            <p className="text-sm text-text-secondary mb-6">Log in to your <span className="font-tenor font-semibold tracking-widest text-primary">Worklin_</span> account</p>
-            
-            {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">{error}</div>}
+        {step === 'selection' && (
+          <div className="animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-[26px] font-tenor font-bold mb-2 text-center text-primary">
+              {authModalTab === 'login' ? 'Welcome back' : 'Join Worklin_'}
+            </h3>
+            <p className="text-sm text-text-secondary mb-8 text-center">
+              {authModalTab === 'login' ? 'How would you like to log in today?' : 'How do you want to use the platform?'}
+            </p>
 
-            <div className="grid grid-cols-2 gap-2.5 mb-5">
+            <div className="grid grid-cols-1 gap-4">
               <div 
-                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' || !signupRole ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
-                onClick={() => setSignupRole('client')}
+                className="border-[1.5px] border-border hover:border-accent hover:bg-[#F8EAE5] rounded-xl p-6 cursor-pointer transition-all flex items-center gap-5 group"
+                onClick={() => {
+                  setSignupRole('client');
+                  setStep('form');
+                }}
               >
-                <div className="text-[13px] font-semibold text-primary">Log in as Client</div>
+                <div className="w-[52px] h-[52px] shrink-0 rounded-full bg-surface group-hover:bg-white group-hover:shadow-sm border border-transparent group-hover:border-border flex items-center justify-center text-primary transition-all">
+                  <Building2 size={24} strokeWidth={1.5} />
+                </div>
+                <div>
+                  <div className="text-base font-semibold mb-0.5 text-primary">I'm a Client</div>
+                  <div className="text-sm text-text-muted">I want to hire expert freelancers</div>
+                </div>
               </div>
-              <div 
-                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'freelancer' ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
-                onClick={() => setSignupRole('freelancer')}
-              >
-                <div className="text-[13px] font-semibold text-primary">Log in as Freelancer</div>
-              </div>
-            </div>
 
-            <button type="button" onClick={handleGoogleAuth} className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
-              <GoogleIcon />
-              Continue with Google
-            </button>
-            
-            <div className="flex items-center gap-3 my-4 text-text-muted text-sm before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
-              or
+              <div 
+                className="border-[1.5px] border-border hover:border-accent hover:bg-[#F8EAE5] rounded-xl p-6 cursor-pointer transition-all flex items-center gap-5 group"
+                onClick={() => {
+                  setSignupRole('freelancer');
+                  setStep('form');
+                }}
+              >
+                <div className="w-[52px] h-[52px] shrink-0 rounded-full bg-surface group-hover:bg-white group-hover:shadow-sm border border-transparent group-hover:border-border flex items-center justify-center text-primary transition-all">
+                  <Briefcase size={24} strokeWidth={1.5} />
+                </div>
+                <div>
+                  <div className="text-base font-semibold mb-0.5 text-primary">I'm a Freelancer</div>
+                  <div className="text-sm text-text-muted">I want to find high-quality work</div>
+                </div>
+              </div>
             </div>
             
-            <div className="mb-3.5">
-              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Email</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com" 
-                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
-                required 
-              />
+            <div className="text-sm text-center mt-8 text-text-secondary pt-6 border-t border-border">
+              {authModalTab === 'login' ? (
+                <>No account? <button type="button" className="text-accent font-semibold border-none bg-transparent cursor-pointer ml-1 hover:underline" onClick={() => openAuthModal('signup')}>Sign up free</button></>
+              ) : (
+                <>Already have an account? <button type="button" className="text-accent font-semibold border-none bg-transparent cursor-pointer ml-1 hover:underline" onClick={() => openAuthModal('login')}>Log in</button></>
+              )}
             </div>
-            <div className="mb-3.5">
-              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••" 
-                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
-                required 
-              />
-            </div>
-            
-            <Button variant="primary" className="w-full mt-1" disabled={loading}>
-              {loading ? 'Logging in...' : 'Log in'}
-            </Button>
-            
-            <div className="text-xs text-text-muted text-center mt-3.5">
-              No account? <button type="button" className="text-accent border-none bg-transparent cursor-pointer font-medium" onClick={() => openAuthModal('signup')}>Sign up free</button>
-            </div>
-          </form>
+          </div>
         )}
 
-        {authModalTab === 'signup' && (
-          <form onSubmit={handleSignup}>
-            <h3 className="text-[22px] font-bold mb-1.5">Create your account</h3>
-            <p className="text-sm text-text-secondary mb-6">I want to...</p>
-            
-            {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">{error}</div>}
-
-            <div className="grid grid-cols-2 gap-2.5 mb-5">
-              <div 
-                className={`border-[1.5px] rounded-md p-4 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' || !signupRole ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
-                onClick={() => setSignupRole('client')}
-              >
-                <div className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-primary mb-2.5 shadow-sm">
-                  <Building2 size={20} strokeWidth={1.5} />
-                </div>
-                <div className="text-[13px] font-semibold mb-0.5 text-primary">Client</div>
-                <div className="text-[11px] text-text-muted">Post projects</div>
-              </div>
-              <div 
-                className={`border-[1.5px] rounded-md p-4 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'freelancer' ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
-                onClick={() => setSignupRole('freelancer')}
-              >
-                <div className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-primary mb-2.5 shadow-sm">
-                  <Briefcase size={20} strokeWidth={1.5} />
-                </div>
-                <div className="text-[13px] font-semibold mb-0.5 text-primary">Freelancer</div>
-                <div className="text-[11px] text-text-muted">Find work</div>
-              </div>
-            </div>
-
-            <button type="button" onClick={handleGoogleAuth} className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
-              <GoogleIcon />
-              Continue with Google
+        {step === 'form' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <button 
+              type="button" 
+              onClick={() => setStep('selection')}
+              className="flex items-center gap-1.5 text-[13px] font-medium text-text-muted hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer mb-6 p-1 -ml-1 rounded-md hover:bg-surface"
+            >
+              <ArrowLeft size={16} /> Back
             </button>
-            
-            <div className="flex items-center gap-3 my-4 text-text-muted text-sm before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
-              or
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 mb-3.5">
-              <div>
-                <label className="block text-[13px] font-medium text-text-secondary mb-1.5">First name</label>
-                <input 
-                  type="text" 
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Sara" 
-                  className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Last name</label>
-                <input 
-                  type="text" 
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Molin" 
-                  className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
-                  required 
-                />
-              </div>
-            </div>
-            
-            <div className="mb-3.5">
-              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Email</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com" 
-                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
-                required 
-              />
-            </div>
-            <div className="mb-3.5">
-              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 8 characters" 
-                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
-                required 
-                minLength={8}
-              />
-            </div>
-            
-            <Button variant="primary" className="w-full mt-1" disabled={loading}>
-              {loading ? 'Creating...' : 'Create account'}
-            </Button>
-            
-            <div className="text-xs text-text-muted text-center mt-3">
-              By signing up you agree to our <a href="#" className="text-accent no-underline">Terms</a> & <a href="#" className="text-accent no-underline">Privacy Policy</a>
-            </div>
-            <div className="text-xs text-text-muted text-center mt-2">
-              Have an account? <button type="button" className="text-accent border-none bg-transparent cursor-pointer font-medium" onClick={() => openAuthModal('login')}>Log in</button>
-            </div>
-          </form>
+
+            {authModalTab === 'login' ? (
+              <form onSubmit={handleLogin}>
+                <h3 className="text-[24px] font-tenor font-bold mb-1.5 text-primary">
+                  Log in as {signupRole === 'client' ? 'Client' : 'Freelancer'}
+                </h3>
+                <p className="text-sm text-text-secondary mb-6">
+                  {signupRole === 'client' ? 'Ready to hire top talent?' : 'Ready to find your next big project?'}
+                </p>
+                
+                {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">{error}</div>}
+
+                <button type="button" onClick={handleGoogleAuth} className="w-full p-3 border-[1.5px] border-border rounded-lg bg-white font-inherit text-[14px] font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface shadow-sm">
+                  <GoogleIcon />
+                  Continue with Google
+                </button>
+                
+                <div className="flex items-center gap-3 my-5 text-text-muted text-xs font-medium uppercase tracking-wider before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
+                  Or use email
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Email address</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com" 
+                    className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-lg font-inherit text-[14px] text-text-primary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-dim" 
+                    required 
+                  />
+                </div>
+                <div className="mb-5">
+                  <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Password</label>
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••" 
+                    className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-lg font-inherit text-[14px] text-text-primary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-dim" 
+                    required 
+                  />
+                </div>
+                
+                <Button variant="primary" className="w-full py-3 text-[15px]" disabled={loading}>
+                  {loading ? 'Logging in...' : 'Log in securely'}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleSignup}>
+                <h3 className="text-[24px] font-tenor font-bold mb-1.5 text-primary">
+                  Sign up as {signupRole === 'client' ? 'Client' : 'Freelancer'}
+                </h3>
+                <p className="text-sm text-text-secondary mb-6">
+                  {signupRole === 'client' ? 'Find and hire the best freelancers.' : 'Find high-quality projects and clients.'}
+                </p>
+                
+                {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">{error}</div>}
+
+                <button type="button" onClick={handleGoogleAuth} className="w-full p-3 border-[1.5px] border-border rounded-lg bg-white font-inherit text-[14px] font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface shadow-sm">
+                  <GoogleIcon />
+                  Continue with Google
+                </button>
+                
+                <div className="flex items-center gap-3 my-5 text-text-muted text-xs font-medium uppercase tracking-wider before:content-[''] before:flex-1 before:h-px before:bg-border after:content-[''] after:flex-1 after:h-px after:bg-border">
+                  Or use email
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-text-secondary mb-1.5">First name</label>
+                    <input 
+                      type="text" 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Jane" 
+                      className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-lg font-inherit text-[14px] text-text-primary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-dim" 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Last name</label>
+                    <input 
+                      type="text" 
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe" 
+                      className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-lg font-inherit text-[14px] text-text-primary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-dim" 
+                      required 
+                    />
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Email address</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com" 
+                    className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-lg font-inherit text-[14px] text-text-primary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-dim" 
+                    required 
+                  />
+                </div>
+                <div className="mb-5">
+                  <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Password</label>
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 8 characters" 
+                    className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-lg font-inherit text-[14px] text-text-primary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-dim" 
+                    required 
+                    minLength={8}
+                  />
+                </div>
+                
+                <Button variant="primary" className="w-full py-3 text-[15px]" disabled={loading}>
+                  {loading ? 'Creating...' : 'Create account'}
+                </Button>
+                
+                <div className="text-xs text-text-muted text-center mt-4">
+                  By signing up you agree to our <a href="#" className="text-accent no-underline hover:underline">Terms</a> & <a href="#" className="text-accent no-underline hover:underline">Privacy Policy</a>
+                </div>
+              </form>
+            )}
+          </div>
         )}
       </div>
     </div>
