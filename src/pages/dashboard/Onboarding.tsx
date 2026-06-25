@@ -44,12 +44,16 @@ export function Onboarding() {
     try {
       const table = selectedRole === 'client' ? 'client_profiles' : 'freelancer_profiles';
       const fullName = `${firstName} ${lastName}`.trim();
+      const baseUsername = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`.replace(/[^a-z0-9_]/g, '');
+      const uniqueSuffix = Math.random().toString(36).substring(2, 6);
+      const generatedUsername = `${baseUsername}_${uniqueSuffix}`;
 
       const profileData: any = {
         id: user.id,
         first_name: firstName,
         last_name: lastName,
         full_name: fullName,
+        username: generatedUsername,
         country: country,
       };
 

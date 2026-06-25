@@ -11,7 +11,7 @@ export function DashboardLayout() {
   const { user, role, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{name: string, avatar: string, id: string} | null>(null);
+  const [profile, setProfile] = useState<{name: string, avatar: string, id: string, username?: string} | null>(null);
 
   useEffect(() => {
     if (user && role) {
@@ -22,21 +22,23 @@ export function DashboardLayout() {
   const fetchProfile = async () => {
     try {
       if (role === 'client') {
-        const { data } = await supabase.from('client_profiles').select('full_name, company_name, company_logo, first_name').eq('id', user?.id).single();
+        const { data } = await supabase.from('client_profiles').select('full_name, company_name, company_logo, first_name, username').eq('id', user?.id).single();
         if (data) {
           setProfile({
             name: data.company_name || data.full_name || data.first_name,
             avatar: data.company_logo || '',
-            id: user!.id
+            id: user!.id,
+            username: data.username
           });
         }
       } else if (role === 'freelancer') {
-        const { data } = await supabase.from('freelancer_profiles').select('full_name, avatar_url, first_name').eq('id', user?.id).single();
+        const { data } = await supabase.from('freelancer_profiles').select('full_name, avatar_url, first_name, username').eq('id', user?.id).single();
         if (data) {
           setProfile({
             name: data.full_name || data.first_name,
             avatar: data.avatar_url || '',
-            id: user!.id
+            id: user!.id,
+            username: data.username
           });
         }
       }
@@ -69,7 +71,9 @@ export function DashboardLayout() {
   const links = role === 'client' ? clientLinks : freelancerLinks;
 
   const handleProfileClick = () => {
-    if (profile?.id) {
+    if (profile?.username) {
+      navigate(`/profile/${profile.username}`);
+    } else if (profile?.id) {
       navigate(`/profile/${profile.id}`);
     }
   };

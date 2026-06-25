@@ -13,6 +13,7 @@ export function ClientSettings() {
   const [profile, setProfile] = useState<any>({
     first_name: '',
     last_name: '',
+    username: '',
     company_name: '',
     country: '',
     avatar_url: '',
@@ -89,6 +90,7 @@ export function ClientSettings() {
           first_name: profile.first_name,
           last_name: profile.last_name,
           full_name: `${profile.first_name} ${profile.last_name}`.trim(),
+          username: profile.username,
           company_name: profile.company_name,
           country: profile.country,
           avatar_url: profile.avatar_url,
@@ -151,6 +153,13 @@ export function ClientSettings() {
             <div>
               <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Last Name</label>
               <input type="text" name="last_name" required value={profile.last_name} onChange={handleChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Username (Public Profile URL)</label>
+              <div className="flex items-center gap-2">
+                <span className="text-text-muted text-sm bg-surface border border-border rounded-l-md px-3 py-[11px]">worklin.com/profile/</span>
+                <input type="text" name="username" required value={profile.username} onChange={(e) => setProfile({...profile, username: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '')})} className="flex-1 p-[11px] px-3.5 border-[1.5px] border-border rounded-r-md font-inherit text-sm outline-none focus:border-accent" />
+              </div>
             </div>
           </div>
         </div>

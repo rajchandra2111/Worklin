@@ -22,7 +22,7 @@ export function PublicProfile() {
       const { data: freelancerData } = await supabase
         .from('freelancer_profiles')
         .select('*')
-        .eq('id', profileId)
+        .or(`username.eq.${profileId},id.eq.${profileId}`)
         .single();
 
       if (freelancerData) {
@@ -35,7 +35,7 @@ export function PublicProfile() {
       const { data: clientData } = await supabase
         .from('client_profiles')
         .select('*')
-        .eq('id', profileId)
+        .or(`username.eq.${profileId},id.eq.${profileId}`)
         .single();
 
       if (clientData) {

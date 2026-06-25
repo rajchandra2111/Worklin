@@ -11,7 +11,8 @@ ADD COLUMN IF NOT EXISTS website TEXT,
 ADD COLUMN IF NOT EXISTS linkedin TEXT,
 ADD COLUMN IF NOT EXISTS company_size TEXT,
 ADD COLUMN IF NOT EXISTS hiring_interests TEXT[],
-ADD COLUMN IF NOT EXISTS hiring_metrics JSONB DEFAULT '{"projects_posted": 0, "projects_completed": 0, "total_spent": 0, "avg_freelancer_rating": 0, "hire_rate": 0, "repeat_hires": 0}';
+ADD COLUMN IF NOT EXISTS hiring_metrics JSONB DEFAULT '{"projects_posted": 0, "projects_completed": 0, "total_spent": 0, "avg_freelancer_rating": 0, "hire_rate": 0, "repeat_hires": 0}',
+ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
 
 -- 2. Alter Freelancer Profiles
 ALTER TABLE public.freelancer_profiles
@@ -27,7 +28,8 @@ ADD COLUMN IF NOT EXISTS certifications JSONB[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS portfolio JSONB[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS service_specialization TEXT[],
 ADD COLUMN IF NOT EXISTS work_preferences JSONB DEFAULT '{"size": [], "engagement": []}',
-ADD COLUMN IF NOT EXISTS metrics JSONB DEFAULT '{"projects_completed": 0, "total_earnings": 0, "success_rate": 0, "avg_rating": 0, "repeat_clients": 0, "response_time": ""}';
+ADD COLUMN IF NOT EXISTS metrics JSONB DEFAULT '{"projects_completed": 0, "total_earnings": 0, "success_rate": 0, "avg_rating": 0, "repeat_clients": 0, "response_time": ""}',
+ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
 
 -- 3. Create Reviews Table
 CREATE TABLE IF NOT EXISTS public.reviews (
