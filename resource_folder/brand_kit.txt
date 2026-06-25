@@ -12,8 +12,8 @@ Text Logo Asset: Worklin_
 Logo Assets Mapping:
 - Primary Logo (Light mode/headers): Worklin_primary.png
 - Dark Logo (Dark mode/footers): Worklin_dark.png
-- White App Icon (Filled backgrounds): Worklin_icon_white.png
-- Dark App Icon (Light backgrounds): Worklin_icon_dark.png
+- White App Icon (Filled backgrounds): Worklin_icon_white.png - * also use it for favicon - which is 32x32px
+- Dark App Icon (Light backgrounds): Worklin_icon_dark.png - * also use it for favicon for white bg of browser
 
 
 2. COLOR PALETTE & SEMANTIC ROLES

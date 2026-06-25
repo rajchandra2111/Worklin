@@ -84,8 +84,9 @@ export function AuthModal() {
             last_name: lastName,
             full_name: `${firstName} ${lastName}`,
             role: signupRole || 'client',
-          }
-        }
+          },
+          emailRedirectTo: window.location.origin,
+        },
       });
 
       if (error) throw error;
@@ -108,6 +109,7 @@ export function AuthModal() {
             access_type: 'offline',
             prompt: 'consent',
           },
+          redirectTo: window.location.origin,
         },
       });
       if (error) throw error;

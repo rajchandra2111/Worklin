@@ -9,6 +9,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { ClientDashboard } from './pages/dashboard/ClientDashboard';
 import { FreelancerDashboard } from './pages/dashboard/FreelancerDashboard';
+import { Onboarding } from './pages/dashboard/Onboarding';
 
 // Simple wrapper components that just trigger the modal and redirect to home
 function LoginRedirect() {
@@ -40,6 +41,8 @@ function App() {
           <Route path="signup" element={<SignupRedirect />} />
           <Route path="browse" element={<Navigate to="/#browse-freelancers" replace />} />
         </Route>
+
+        <Route path="/onboarding" element={<Onboarding />} />
 
         {/* Client Dashboard Routes */}
         <Route element={<ProtectedRoute allowedRoles={['client']} />}>

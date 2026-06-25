@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   role: Role;
   isLoading: boolean;
+  fetchRole: (userId: string, metadataRole?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, isLoading, signOut }}>
+    <AuthContext.Provider value={{ user, role, isLoading, fetchRole, signOut }}>
       {children}
     </AuthContext.Provider>
   );
