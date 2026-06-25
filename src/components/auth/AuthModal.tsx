@@ -108,11 +108,8 @@ export function AuthModal() {
 
   const handleGoogleAuth = async () => {
     try {
-      if (authModalTab === 'signup') {
-        localStorage.setItem('intendedRole', signupRole || 'client');
-      } else {
-        localStorage.removeItem('intendedRole');
-      }
+      const intendedRole = signupRole || 'client';
+      localStorage.setItem('activeRole', intendedRole);
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -154,16 +151,16 @@ export function AuthModal() {
 
             <div className="grid grid-cols-2 gap-2.5 mb-5">
               <div 
-                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' || !signupRole ? 'border-accent bg-accent-dim' : 'border-border hover:border-accent hover:bg-accent-dim'}`}
+                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' || !signupRole ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
                 onClick={() => setSignupRole('client')}
               >
-                <div className="text-[13px] font-semibold">Log in as Client</div>
+                <div className="text-[13px] font-semibold text-primary">Log in as Client</div>
               </div>
               <div 
-                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'freelancer' ? 'border-accent bg-accent-dim' : 'border-border hover:border-accent hover:bg-accent-dim'}`}
+                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'freelancer' ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
                 onClick={() => setSignupRole('freelancer')}
               >
-                <div className="text-[13px] font-semibold">Log in as Freelancer</div>
+                <div className="text-[13px] font-semibold text-primary">Log in as Freelancer</div>
               </div>
             </div>
 
@@ -218,23 +215,23 @@ export function AuthModal() {
 
             <div className="grid grid-cols-2 gap-2.5 mb-5">
               <div 
-                className={`border-[1.5px] rounded-md p-4 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' ? 'border-accent bg-accent-dim' : 'border-border hover:border-accent hover:bg-accent-dim'}`}
+                className={`border-[1.5px] rounded-md p-4 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' || !signupRole ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
                 onClick={() => setSignupRole('client')}
               >
                 <div className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-primary mb-2.5 shadow-sm">
                   <Building2 size={20} strokeWidth={1.5} />
                 </div>
-                <div className="text-[13px] font-semibold mb-0.5">Client</div>
+                <div className="text-[13px] font-semibold mb-0.5 text-primary">Client</div>
                 <div className="text-[11px] text-text-muted">Post projects</div>
               </div>
               <div 
-                className={`border-[1.5px] rounded-md p-4 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'freelancer' ? 'border-accent bg-accent-dim' : 'border-border hover:border-accent hover:bg-accent-dim'}`}
+                className={`border-[1.5px] rounded-md p-4 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'freelancer' ? 'border-accent bg-accent-dim shadow-sm shadow-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent-dim/50'}`}
                 onClick={() => setSignupRole('freelancer')}
               >
                 <div className="w-10 h-10 rounded-full bg-white border border-border flex items-center justify-center text-primary mb-2.5 shadow-sm">
                   <Briefcase size={20} strokeWidth={1.5} />
                 </div>
-                <div className="text-[13px] font-semibold mb-0.5">Freelancer</div>
+                <div className="text-[13px] font-semibold mb-0.5 text-primary">Freelancer</div>
                 <div className="text-[11px] text-text-muted">Find work</div>
               </div>
             </div>
