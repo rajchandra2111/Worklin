@@ -41,7 +41,7 @@ export function AuthModal() {
     setError(null);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -50,12 +50,12 @@ export function AuthModal() {
       
       closeAuthModal();
       
-      // Let AuthContext handle the role fetching. 
-      // We will redirect to dashboard later in App.tsx based on the session.
-      // But for now, we can try to guess or just redirect to home.
-      // A better way is handled by a top-level effect or the user clicking a dashboard link.
-      // For immediate feedback, we redirect to home, and the Navbar will show dashboard.
-      navigate('/');
+      const userRole = data.user?.user_metadata?.role;
+      if (userRole) {
+        navigate(`/${userRole}/dashboard`);
+      } else {
+        navigate('/onboarding');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {
@@ -92,7 +92,7 @@ export function AuthModal() {
       if (error) throw error;
       
       closeAuthModal();
-      navigate('/');
+      navigate(`/${signupRole || 'client'}/dashboard`);
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
     } finally {
