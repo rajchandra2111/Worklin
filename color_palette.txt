@@ -1,0 +1,5 @@
+000000 Black
+DADADA Alabaster Grey
+C76B4C Cinnamon Wood
+CB4012 Red Ochre
+FFFFFF White

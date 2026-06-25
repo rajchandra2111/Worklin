@@ -5,17 +5,17 @@
   --color-primary: #000000;
   --color-accent: #CB4012;
   --color-accent-light: #C76B4C;
-  --color-accent-dim: #fae8e3;
-  --color-surface: #E9E9E9;
+  --color-surface: #DADADA;
   --color-white: #ffffff;
   
+  --color-accent-dim: #cb40121a;
   --color-text-primary: #000000;
-  --color-text-secondary: #4a4a4a;
-  --color-text-muted: #808080;
+  --color-text-secondary: #000000b3;
+  --color-text-muted: #00000080;
   
-  --color-border: #d1d1d1;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
+  --color-border: #DADADA;
+  --color-success: #C76B4C;
+  --color-warning: #CB4012;
 
   --radius-sm: 4px;
   --radius-md: 8px;
