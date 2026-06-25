@@ -20,7 +20,7 @@ export function BrowseProjects() {
         .from('projects')
         .select(`
           *,
-          client:client_id (
+          client:client_profiles (
             full_name
           )
         `)

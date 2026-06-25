@@ -6,9 +6,10 @@ type Role = 'client' | 'freelancer' | null;
 
 interface AuthContextType {
   user: User | null;
-  role: Role;
+  role: Role; // Verified DB role
+  activeRole: Role; // What they are trying to be
   isLoading: boolean;
-  fetchRole: (userId: string, metadataRole?: string) => Promise<void>;
+  verifyRole: (userId: string, intendedRole: Role) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -19,12 +20,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [activeRole, setActiveRole] = useState<Role>(() => {
+    return (localStorage.getItem('activeRole') as Role) || null;
+  });
+
   useEffect(() => {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchRole(session.user.id, session.user.user_metadata?.role);
+        verifyRole(session.user.id, localStorage.getItem('activeRole') as Role || session.user.user_metadata?.role);
       } else {
         setIsLoading(false);
       }
@@ -35,9 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         setIsLoading(true);
-        fetchRole(session.user.id, session.user.user_metadata?.role);
+        verifyRole(session.user.id, localStorage.getItem('activeRole') as Role || session.user.user_metadata?.role);
       } else {
         setRole(null);
+        setActiveRole(null);
+        localStorage.removeItem('activeRole');
         setIsLoading(false);
       }
     });
@@ -45,24 +52,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchRole = async (userId: string, metadataRole?: string) => {
+  const verifyRole = async (userId: string, intendedRole: Role) => {
+    if (!intendedRole) {
+      setRole(null);
+      setActiveRole(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      const table = intendedRole === 'client' ? 'client_profiles' : 'freelancer_profiles';
+      
       const { data } = await supabase
-        .from('users')
-        .select('role')
+        .from(table)
+        .select('id')
         .eq('id', userId)
         .single();
         
-      if (data && data.role) {
-        setRole(data.role as Role);
-      } else if (metadataRole) {
-        // Fallback to metadata if DB record hasn't propagated yet
-        setRole(metadataRole as Role);
+      if (data) {
+        setRole(intendedRole);
+        setActiveRole(intendedRole);
+        localStorage.setItem('activeRole', intendedRole);
       } else {
-        setRole('client'); // Safe default
+        // They don't have this profile yet! They need onboarding for this role.
+        setRole(null);
+        setActiveRole(intendedRole); // We remember they want to be this role
       }
     } catch (err) {
-      console.error('Error fetching role:', err);
+      console.error(`Error verifying ${intendedRole} role:`, err);
+      setRole(null);
+      setActiveRole(intendedRole);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, isLoading, fetchRole, signOut }}>
+    <AuthContext.Provider value={{ user, role, activeRole, isLoading, verifyRole, signOut }}>
       {children}
     </AuthContext.Provider>
   );

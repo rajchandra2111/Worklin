@@ -33,7 +33,7 @@ export function ProjectDetails() {
         .from('projects')
         .select(`
           *,
-          client:client_id (
+          client:client_profiles (
             full_name,
             company_name,
             country

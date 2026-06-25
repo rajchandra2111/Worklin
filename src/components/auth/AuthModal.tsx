@@ -3,11 +3,9 @@ import { useUiStore } from '../../store/uiStore';
 import { Button } from '../ui/Button';
 import { Building2, Briefcase } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 
 export function AuthModal() {
   const { authModalTab, signupRole, closeAuthModal, openAuthModal, setSignupRole } = useUiStore();
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,21 +39,20 @@ export function AuthModal() {
     setError(null);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
       
+      const intendedRole = signupRole || 'client';
+      localStorage.setItem('activeRole', intendedRole);
+      
       closeAuthModal();
       
-      const userRole = data.user?.user_metadata?.role;
-      if (userRole) {
-        navigate(`/${userRole}/dashboard`);
-      } else {
-        navigate('/onboarding');
-      }
+      // We don't navigate directly here anymore. AuthContext will verify the role 
+      // and update the state, which then causes Home.tsx or App.tsx to redirect safely.
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {
@@ -83,16 +80,25 @@ export function AuthModal() {
             first_name: firstName,
             last_name: lastName,
             full_name: `${firstName} ${lastName}`,
+            // We don't need role in metadata anymore, but we can keep it as default
             role: signupRole || 'client',
           },
           emailRedirectTo: window.location.origin,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('already registered') || error.message.includes('already exists')) {
+          throw new Error('This email is already registered. Please click "Log in" below to sign into your existing account, where you can then easily switch roles or create your other profile.');
+        }
+        throw error;
+      }
+      
+      const intendedRole = signupRole || 'client';
+      localStorage.setItem('activeRole', intendedRole);
       
       closeAuthModal();
-      navigate(`/${signupRole || 'client'}/dashboard`);
+      // AuthContext will handle the redirect
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
     } finally {
@@ -145,6 +151,21 @@ export function AuthModal() {
             <p className="text-sm text-text-secondary mb-6">Log in to your <span className="font-tenor font-semibold tracking-widest text-primary">Worklin_</span> account</p>
             
             {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">{error}</div>}
+
+            <div className="grid grid-cols-2 gap-2.5 mb-5">
+              <div 
+                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' || !signupRole ? 'border-accent bg-accent-dim' : 'border-border hover:border-accent hover:bg-accent-dim'}`}
+                onClick={() => setSignupRole('client')}
+              >
+                <div className="text-[13px] font-semibold">Log in as Client</div>
+              </div>
+              <div 
+                className={`border-[1.5px] rounded-md p-3 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'freelancer' ? 'border-accent bg-accent-dim' : 'border-border hover:border-accent hover:bg-accent-dim'}`}
+                onClick={() => setSignupRole('freelancer')}
+              >
+                <div className="text-[13px] font-semibold">Log in as Freelancer</div>
+              </div>
+            </div>
 
             <button type="button" onClick={handleGoogleAuth} className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
               <GoogleIcon />
