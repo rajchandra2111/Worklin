@@ -1,10 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useUiStore } from '../../store/uiStore';
 import { Button } from '../ui/Button';
 import { Building2, Briefcase } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 export function AuthModal() {
   const { authModalTab, signupRole, closeAuthModal, openAuthModal, setSignupRole } = useUiStore();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -14,11 +25,100 @@ export function AuthModal() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeAuthModal]);
 
+  useEffect(() => {
+    setError(null);
+    setEmail('');
+    setPassword('');
+    setFirstName('');
+    setLastName('');
+  }, [authModalTab]);
+
   if (!authModalTab) return null;
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      closeAuthModal();
+      
+      // Let AuthContext handle the role fetching. 
+      // We will redirect to dashboard later in App.tsx based on the session.
+      // But for now, we can try to guess or just redirect to home.
+      // A better way is handled by a top-level effect or the user clicking a dashboard link.
+      // For immediate feedback, we redirect to home, and the Navbar will show dashboard.
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (!firstName || !lastName) {
+      setError('Please provide your first and last name');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`,
+            role: signupRole || 'client',
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      closeAuthModal();
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign up');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in with Google');
+    }
+  };
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 z-1000 flex items-center justify-center p-5"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeAuthModal();
       }}
@@ -32,11 +132,13 @@ export function AuthModal() {
         </button>
 
         {authModalTab === 'login' && (
-          <div>
+          <form onSubmit={handleLogin}>
             <h3 className="text-[22px] font-bold mb-1.5">Welcome back</h3>
-            <p className="text-sm text-text-secondary mb-6">Log in to your <span className="font-tenor font-semibold tracking-tight text-primary">Worklin_</span> account</p>
+            <p className="text-sm text-text-secondary mb-6">Log in to your <span className="font-tenor font-semibold tracking-widest text-primary">Worklin_</span> account</p>
             
-            <button className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
+            {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">{error}</div>}
+
+            <button type="button" onClick={handleGoogleAuth} className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
               <GoogleIcon />
               Continue with Google
             </button>
@@ -47,26 +149,44 @@ export function AuthModal() {
             
             <div className="mb-3.5">
               <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Email</label>
-              <input type="email" placeholder="you@example.com" className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" />
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com" 
+                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
+                required 
+              />
             </div>
             <div className="mb-3.5">
               <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Password</label>
-              <input type="password" placeholder="••••••••" className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" />
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" 
+                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
+                required 
+              />
             </div>
             
-            <Button variant="primary" className="w-full mt-1">Log in</Button>
+            <Button variant="primary" className="w-full mt-1" disabled={loading}>
+              {loading ? 'Logging in...' : 'Log in'}
+            </Button>
             
             <div className="text-xs text-text-muted text-center mt-3.5">
-              No account? <button className="text-accent border-none bg-transparent cursor-pointer font-medium" onClick={() => openAuthModal('signup')}>Sign up free</button>
+              No account? <button type="button" className="text-accent border-none bg-transparent cursor-pointer font-medium" onClick={() => openAuthModal('signup')}>Sign up free</button>
             </div>
-          </div>
+          </form>
         )}
 
         {authModalTab === 'signup' && (
-          <div>
+          <form onSubmit={handleSignup}>
             <h3 className="text-[22px] font-bold mb-1.5">Create your account</h3>
             <p className="text-sm text-text-secondary mb-6">I want to...</p>
             
+            {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100">{error}</div>}
+
             <div className="grid grid-cols-2 gap-2.5 mb-5">
               <div 
                 className={`border-[1.5px] rounded-md p-4 cursor-pointer text-center transition-all flex flex-col items-center justify-center ${signupRole === 'client' ? 'border-accent bg-accent-dim' : 'border-border hover:border-accent hover:bg-accent-dim'}`}
@@ -90,7 +210,7 @@ export function AuthModal() {
               </div>
             </div>
 
-            <button className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
+            <button type="button" onClick={handleGoogleAuth} className="w-full p-[11px] border-[1.5px] border-border rounded-md bg-white font-inherit text-sm font-medium text-text-primary cursor-pointer mb-2 flex items-center justify-center gap-2 transition-colors hover:bg-surface">
               <GoogleIcon />
               Continue with Google
             </button>
@@ -102,32 +222,63 @@ export function AuthModal() {
             <div className="grid grid-cols-2 gap-3 mb-3.5">
               <div>
                 <label className="block text-[13px] font-medium text-text-secondary mb-1.5">First name</label>
-                <input type="text" placeholder="Sara" className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" />
+                <input 
+                  type="text" 
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Sara" 
+                  className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Last name</label>
-                <input type="text" placeholder="Molin" className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" />
+                <input 
+                  type="text" 
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Molin" 
+                  className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
+                  required 
+                />
               </div>
             </div>
             
             <div className="mb-3.5">
               <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Email</label>
-              <input type="email" placeholder="you@example.com" className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" />
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com" 
+                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
+                required 
+              />
             </div>
             <div className="mb-3.5">
               <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Password</label>
-              <input type="password" placeholder="Min. 8 characters" className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" />
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min. 8 characters" 
+                className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm text-text-primary outline-none transition-colors focus:border-accent" 
+                required 
+                minLength={8}
+              />
             </div>
             
-            <Button variant="primary" className="w-full mt-1">Create account</Button>
+            <Button variant="primary" className="w-full mt-1" disabled={loading}>
+              {loading ? 'Creating...' : 'Create account'}
+            </Button>
             
             <div className="text-xs text-text-muted text-center mt-3">
               By signing up you agree to our <a href="#" className="text-accent no-underline">Terms</a> & <a href="#" className="text-accent no-underline">Privacy Policy</a>
             </div>
             <div className="text-xs text-text-muted text-center mt-2">
-              Have an account? <button className="text-accent border-none bg-transparent cursor-pointer font-medium" onClick={() => openAuthModal('login')}>Log in</button>
+              Have an account? <button type="button" className="text-accent border-none bg-transparent cursor-pointer font-medium" onClick={() => openAuthModal('login')}>Log in</button>
             </div>
-          </div>
+          </form>
         )}
       </div>
     </div>

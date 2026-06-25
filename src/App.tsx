@@ -5,6 +5,10 @@ import { ForClients } from './pages/ForClients';
 import { ForFreelancers } from './pages/ForFreelancers';
 import { useEffect } from 'react';
 import { useUiStore } from './store/uiStore';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { DashboardLayout } from './layouts/DashboardLayout';
+import { ClientDashboard } from './pages/dashboard/ClientDashboard';
+import { FreelancerDashboard } from './pages/dashboard/FreelancerDashboard';
 
 // Simple wrapper components that just trigger the modal and redirect to home
 function LoginRedirect() {
@@ -27,14 +31,32 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="for-clients" element={<ForClients />} />
           <Route path="for-freelancers" element={<ForFreelancers />} />
           <Route path="login" element={<LoginRedirect />} />
           <Route path="signup" element={<SignupRedirect />} />
-          {/* Fallback for browse for now */}
           <Route path="browse" element={<Navigate to="/#browse-freelancers" replace />} />
+        </Route>
+
+        {/* Client Dashboard Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['client']} />}>
+          <Route path="/client" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="*" element={<div className="p-8">Page under construction</div>} />
+          </Route>
+        </Route>
+
+        {/* Freelancer Dashboard Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['freelancer']} />}>
+          <Route path="/freelancer" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<FreelancerDashboard />} />
+            <Route path="*" element={<div className="p-8">Page under construction</div>} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
