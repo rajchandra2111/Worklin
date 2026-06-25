@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Briefcase, DollarSign, Search, ArrowRight, MoreHorizontal, Clock, Star } from 'lucide-react';
+import { FileText, Briefcase, DollarSign, Search, ArrowRight, Clock, Star } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -10,23 +10,23 @@ export function FreelancerDashboard() {
   const { user } = useAuth();
 
   const [activeBids, setActiveBids] = useState<any[]>([]);
+  const [recommendedProjects, setRecommendedProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      fetchBids();
+      fetchData();
     }
   }, [user]);
 
-  const fetchBids = async () => {
+  const fetchData = async () => {
     try {
-      // Also fetching client_profiles within projects is tricky without a direct join, 
-      // but project has client:client_profiles. Let's get it:
-      const { data, error } = await supabase
+      // Fetch user's bids
+      const { data: bidsData, error: bidsError } = await supabase
         .from('proposals')
         .select(`
           *,
-          project:projects (
+          project:projects!proposals_project_id_fkey (
             title,
             budget,
             budget_type,
@@ -36,10 +36,25 @@ export function FreelancerDashboard() {
         .eq('freelancer_id', user!.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setActiveBids(data || []);
+      if (bidsError) throw bidsError;
+      setActiveBids(bidsData || []);
+
+      // Fetch recommended projects (open projects)
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          client:client_profiles(full_name)
+        `)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (projectsError) throw projectsError;
+      setRecommendedProjects(projectsData || []);
+
     } catch (err) {
-      console.error('Error fetching bids:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
@@ -131,6 +146,55 @@ export function FreelancerDashboard() {
                         </span>
                         <span className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           View Project <ArrowRight size={14} />
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-4 mt-12">
+              <h2 className="text-[20px] font-bold font-tenor">Recommended for You</h2>
+              <Button variant="ghost" size="sm" className="text-text-secondary" onClick={() => navigate('/browse')}>View More</Button>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+              {loading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                </div>
+              ) : recommendedProjects.length === 0 ? (
+                <div className="p-8 text-center text-text-secondary">
+                  No open projects found.
+                </div>
+              ) : (
+                <div className="flex flex-col divide-y divide-border">
+                  {recommendedProjects.map((project) => (
+                    <div key={project.id} className="p-6 hover:bg-surface/50 transition-colors group cursor-pointer" onClick={() => navigate(`/freelancer/project/${project.id}`)}>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-semibold text-[16px] text-text-primary group-hover:text-accent transition-colors">
+                          {project.title}
+                        </h3>
+                        <button className="text-text-muted hover:text-accent bg-transparent border-none cursor-pointer">
+                          <Star size={18} />
+                        </button>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
+                        <span className="text-text-secondary font-medium capitalize">{project.budget_type}</span>
+                        <span className="text-text-primary font-semibold">${project.budget}</span>
+                        <span className="text-text-secondary">Client: {project.client?.full_name || 'Anonymous'}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                        <span className="text-xs text-text-muted flex items-center gap-1.5">
+                          <Clock size={14} /> Posted {new Date(project.created_at).toLocaleDateString()}
+                        </span>
+                        <span className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Submit Proposal <ArrowRight size={14} />
                         </span>
                       </div>
                     </div>

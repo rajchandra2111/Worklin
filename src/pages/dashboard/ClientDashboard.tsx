@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FolderOpen, FileText, CreditCard, MessageSquare, Plus, ArrowRight, MoreHorizontal, Clock, CheckCircle } from 'lucide-react';
+import { FolderOpen, FileText, CreditCard, MessageSquare, Plus, ArrowRight, MoreHorizontal, Clock } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
@@ -25,7 +25,7 @@ export function ClientDashboard() {
         .from('projects')
         .select(`
           *,
-          proposals(count)
+          proposals!proposals_project_id_fkey(count)
         `)
         .eq('client_id', user!.id)
         .order('created_at', { ascending: false });

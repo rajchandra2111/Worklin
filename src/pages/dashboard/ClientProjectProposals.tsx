@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Clock, DollarSign, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export function ClientProjectProposals() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   
   const [project, setProject] = useState<any>(null);
   const [proposals, setProposals] = useState<any[]>([]);
