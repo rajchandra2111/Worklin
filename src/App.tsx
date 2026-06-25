@@ -10,6 +10,9 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 import { ClientDashboard } from './pages/dashboard/ClientDashboard';
 import { FreelancerDashboard } from './pages/dashboard/FreelancerDashboard';
 import { Onboarding } from './pages/dashboard/Onboarding';
+import { PostProject } from './pages/dashboard/PostProject';
+import { BrowseProjects } from './pages/dashboard/BrowseProjects';
+import { ProjectDetails } from './pages/dashboard/ProjectDetails';
 
 // Simple wrapper components that just trigger the modal and redirect to home
 function LoginRedirect() {
@@ -49,6 +52,7 @@ function App() {
           <Route path="/client" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="post-project" element={<PostProject />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
         </Route>
@@ -58,6 +62,8 @@ function App() {
           <Route path="/freelancer" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<FreelancerDashboard />} />
+            <Route path="browse" element={<BrowseProjects />} />
+            <Route path="project/:id" element={<ProjectDetails />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
         </Route>
