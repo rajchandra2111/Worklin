@@ -18,6 +18,8 @@ import { FreelancerSettings } from './pages/dashboard/FreelancerSettings';
 import { FreelancerProposals } from './pages/dashboard/FreelancerProposals';
 import { PublicProfile } from './pages/PublicProfile';
 
+import { Messages } from './pages/dashboard/Messages';
+
 // Simple wrapper components that just trigger the modal and redirect to home
 function LoginRedirect() {
   const { openAuthModal } = useUiStore();
@@ -59,6 +61,7 @@ function App() {
             <Route path="dashboard" element={<ClientDashboard />} />
             <Route path="post-project" element={<PostProject />} />
             <Route path="project/:id/proposals" element={<ClientProjectProposals />} />
+            <Route path="messages" element={<Messages />} />
             <Route path="settings" element={<ClientSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
@@ -71,6 +74,7 @@ function App() {
             <Route path="dashboard" element={<FreelancerDashboard />} />
             <Route path="browse" element={<BrowseProjects />} />
             <Route path="proposals" element={<FreelancerProposals />} />
+            <Route path="messages" element={<Messages />} />
             <Route path="project/:id" element={<ProjectDetails />} />
             <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
