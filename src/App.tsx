@@ -15,6 +15,7 @@ import { PostProject } from './pages/dashboard/PostProject';
 import { ProjectDetails } from './pages/dashboard/ProjectDetails';
 import { ClientSettings } from './pages/dashboard/ClientSettings';
 import { FreelancerSettings } from './pages/dashboard/FreelancerSettings';
+import { FreelancerProposals } from './pages/dashboard/FreelancerProposals';
 import { PublicProfile } from './pages/PublicProfile';
 
 // Simple wrapper components that just trigger the modal and redirect to home
@@ -68,6 +69,8 @@ function App() {
           <Route path="/freelancer" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<FreelancerDashboard />} />
+            <Route path="browse" element={<BrowseProjects />} />
+            <Route path="proposals" element={<FreelancerProposals />} />
             <Route path="project/:id" element={<ProjectDetails />} />
             <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
