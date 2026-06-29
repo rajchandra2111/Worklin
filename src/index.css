@@ -5,7 +5,7 @@
   --color-primary: #000000;
   --color-accent: #CB4012;
   --color-accent-light: #C76B4C;
-  --color-surface: #DADADA;
+  --color-surface: #F7F7F7;
   --color-white: #ffffff;
   
   --color-accent-dim: #cb40121a;
@@ -13,7 +13,7 @@
   --color-text-secondary: #000000b3;
   --color-text-muted: #00000080;
   
-  --color-border: #DADADA;
+  --color-border: #F7F7F7;
   --color-success: #C76B4C;
   --color-warning: #CB4012;
 

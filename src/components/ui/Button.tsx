@@ -18,7 +18,7 @@ export function Button({
   
   const variants = {
     primary: "bg-accent text-white hover:bg-accent-light",
-    secondary: "bg-surface text-text-primary hover:bg-[#DADADA]",
+    secondary: "bg-surface text-text-primary hover:bg-[#F7F7F7]",
     outline: "bg-transparent text-primary border-[1.5px] border-primary hover:bg-accent-light",
     ghost: "bg-transparent text-text-secondary hover:text-text-primary hover:bg-surface",
   };

@@ -21,7 +21,7 @@ Logo Assets Mapping:
 Primary Text & Dark Accents:    #000000 (Black)
 Brand Action & Primary CTA:     #CB4012 (Red Ochre)
 Secondary Action & Hovers:      #C76B4C (Cinnamon Wood)
-Borders, Dividers & Muted:      #DADADA (Alabaster Grey)
+Borders, Dividers & Muted:      #F7F7F7 (Alabaster Grey)
 Platform Background:            #FFFFFF (White)
 
 
@@ -57,7 +57,7 @@ Geometry: Uniform 2px corner radius. Strict 45° and 90° angles.
 
 Icon Color Mapping:
 - Default State: #000000 (Black)
-- Muted/Disabled State: #DADADA (Alabaster Grey)
+- Muted/Disabled State: #F7F7F7
 - Hover/Active State: #CB4012 (Red Ochre)
 
 Metaphor Consistency:
