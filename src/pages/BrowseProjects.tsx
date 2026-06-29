@@ -26,6 +26,7 @@ export function BrowseProjects() {
   const searchQuery = searchParams.get('q') || '';
   const activeCategory = searchParams.get('category') || '';
   const activeBudgetType = searchParams.get('budgetType') || '';
+  const activeSort = searchParams.get('sort') || 'newest';
 
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +55,7 @@ export function BrowseProjects() {
     if (user) {
       fetchSavedProjects();
     }
-  }, [searchQuery, activeCategory, activeBudgetType, user]);
+  }, [searchQuery, activeCategory, activeBudgetType, activeSort, user]);
 
   const fetchSavedProjects = async () => {
     if (!user) return;
@@ -83,8 +84,14 @@ export function BrowseProjects() {
             full_name
           )
         `)
-        .eq('status', 'open')
-        .order('created_at', { ascending: false });
+        .eq('status', 'open');
+
+      // Apply Sort
+      if (activeSort === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      } else {
+        query = query.order('created_at', { ascending: false }); // newest is default
+      }
 
       // Apply Filters
       if (searchQuery) {
@@ -283,8 +290,19 @@ export function BrowseProjects() {
             <h2 className="text-[22px] font-tenor font-bold text-text-primary">
               {loading ? 'Searching...' : `${projects.length} Jobs Found`}
             </h2>
-            <div className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer hover:text-text-primary">
-              Sort by: <span className="font-semibold">Newest</span> <ChevronDown size={16} />
+            <div className="flex items-center gap-2 text-sm text-text-secondary">
+              Sort by: 
+              <div className="relative">
+                <select 
+                  value={activeSort}
+                  onChange={(e) => updateFilter('sort', e.target.value)}
+                  className="appearance-none bg-transparent font-semibold text-text-primary cursor-pointer outline-none pr-6 focus:ring-0"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                </select>
+                <ChevronDown size={16} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary" />
+              </div>
             </div>
           </div>
 
