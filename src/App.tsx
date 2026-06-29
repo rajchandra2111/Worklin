@@ -16,6 +16,7 @@ import { ProjectDetails } from './pages/dashboard/ProjectDetails';
 import { ClientSettings } from './pages/dashboard/ClientSettings';
 import { FreelancerSettings } from './pages/dashboard/FreelancerSettings';
 import { FreelancerProposals } from './pages/dashboard/FreelancerProposals';
+import { FreelancerEarnings } from './pages/dashboard/FreelancerEarnings';
 import { PublicProfile } from './pages/PublicProfile';
 
 import { Messages } from './pages/dashboard/Messages';
@@ -73,10 +74,11 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<FreelancerDashboard />} />
             <Route path="browse" element={<BrowseProjects />} />
-            <Route path="proposals" element={<FreelancerProposals />} />
-            <Route path="messages" element={<Messages />} />
-            <Route path="project/:id" element={<ProjectDetails />} />
-            <Route path="settings" element={<FreelancerSettings />} />
+            <Route path="/freelancer" element={<FreelancerDashboard />} />
+            <Route path="/freelancer/messages" element={<Messages />} />
+            <Route path="/freelancer/proposals" element={<FreelancerProposals />} />
+            <Route path="/freelancer/earnings" element={<FreelancerEarnings />} />
+            <Route path="/freelancer/settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
         </Route>

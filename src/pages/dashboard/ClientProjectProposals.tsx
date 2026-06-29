@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ShieldCheck, CreditCard, Lock } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export function ClientProjectProposals() {
@@ -10,6 +10,7 @@ export function ClientProjectProposals() {
   
   const [project, setProject] = useState<any>(null);
   const [proposals, setProposals] = useState<any[]>([]);
+  const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
 
@@ -46,6 +47,17 @@ export function ClientProjectProposals() {
 
       if (proposalError) throw proposalError;
       setProposals(proposalData || []);
+
+      // 3. If hired, fetch the contract
+      if (projectData.status === 'hired' || projectData.status === 'completed') {
+        const { data: contractData } = await supabase
+          .from('contracts')
+          .select('*')
+          .eq('project_id', id)
+          .single();
+        if (contractData) setContract(contractData);
+      }
+
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -56,16 +68,51 @@ export function ClientProjectProposals() {
   const handleAcceptProposal = async (proposalId: string) => {
     setProcessing(proposalId);
     try {
-      // Call the atomic RPC to accept bid and reject others
       const { error } = await supabase.rpc('accept_proposal', { p_proposal_id: proposalId });
-      
       if (error) throw error;
-
-      // Refresh data
       await fetchData();
     } catch (err) {
       console.error('Error accepting proposal:', err);
       alert('Failed to accept proposal.');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleFundEscrow = async () => {
+    if (!contract) return;
+    setProcessing('funding');
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { contractId: contract.id }
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('Error funding escrow:', err);
+      alert(err.message || 'Failed to initialize escrow funding.');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleReleaseFunds = async () => {
+    if (!contract) return;
+    if (!confirm('Are you sure you want to release these funds to the freelancer? This cannot be undone.')) return;
+    
+    setProcessing('releasing');
+    try {
+      const { data, error } = await supabase.functions.invoke('capture-payment', {
+        body: { contractId: contract.id }
+      });
+      if (error) throw error;
+      alert('Funds released successfully!');
+      await fetchData();
+    } catch (err: any) {
+      console.error('Error releasing funds:', err);
+      alert(err.message || 'Failed to release funds.');
     } finally {
       setProcessing(null);
     }
@@ -92,6 +139,60 @@ export function ClientProjectProposals() {
         <ArrowLeft size={18} />
         Back to Dashboard
       </button>
+
+      {/* Escrow Banner (If Hired) */}
+      {contract && contract.status === 'pending' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-amber-800">
+            <Lock size={32} className="shrink-0" />
+            <div>
+              <h3 className="font-bold text-lg mb-1">Fund Escrow to start work</h3>
+              <p className="text-sm">You have hired a freelancer! Please fund the escrow balance securely via Stripe to begin the project.</p>
+            </div>
+          </div>
+          <Button 
+            variant="primary" 
+            onClick={handleFundEscrow} 
+            disabled={processing === 'funding'}
+            className="shrink-0 flex items-center gap-2 bg-amber-600 hover:bg-amber-700"
+          >
+            <CreditCard size={18} />
+            {processing === 'funding' ? 'Redirecting...' : 'Fund Escrow'}
+          </Button>
+        </div>
+      )}
+
+      {/* Release Funds Banner (If Active) */}
+      {contract && contract.status === 'active' && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-green-800">
+            <ShieldCheck size={32} className="shrink-0" />
+            <div>
+              <h3 className="font-bold text-lg mb-1">Project is Active (Escrow Funded)</h3>
+              <p className="text-sm">Work is currently in progress. Once the freelancer delivers the work, you can approve and release the funds.</p>
+            </div>
+          </div>
+          <Button 
+            variant="primary" 
+            onClick={handleReleaseFunds} 
+            disabled={processing === 'releasing'}
+            className="shrink-0 flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <CheckCircle size={18} />
+            {processing === 'releasing' ? 'Releasing...' : 'Approve Work & Release Funds'}
+          </Button>
+        </div>
+      )}
+
+      {contract && contract.status === 'completed' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 flex items-center gap-4 text-blue-800">
+          <CheckCircle size={32} className="shrink-0" />
+          <div>
+            <h3 className="font-bold text-lg mb-1">Project Completed</h3>
+            <p className="text-sm">The funds have been released and the project is successfully concluded.</p>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white p-8 rounded-xl border border-border shadow-sm mb-8">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">

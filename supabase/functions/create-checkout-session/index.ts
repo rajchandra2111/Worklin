@@ -37,16 +37,28 @@ serve(async (req) => {
 
     if (!user) throw new Error('Unauthorized')
 
-    // Fetch the contract details
+    // Fetch the contract details and freelancer's Stripe Account ID
     const { data: contract, error: contractError } = await supabase
       .from('contracts')
-      .select('amount, project_id, freelancer_id')
+      .select(`
+        amount, 
+        project_id, 
+        freelancer_id,
+        freelancer:freelancer_profiles (
+          stripe_account_id
+        )
+      `)
       .eq('id', contractId)
       .eq('client_id', user.id)
       .single()
 
     if (contractError || !contract) {
       throw new Error('Contract not found or unauthorized')
+    }
+
+    const stripeAccountId = contract.freelancer?.stripe_account_id;
+    if (!stripeAccountId) {
+      throw new Error('Freelancer has not connected their bank account yet. Cannot fund escrow.')
     }
 
     // Platform fee logic (10%)
@@ -70,6 +82,13 @@ serve(async (req) => {
         },
       ],
       mode: 'payment',
+      payment_intent_data: {
+        capture_method: 'manual',
+        application_fee_amount: Math.round(platformFee * 100),
+        transfer_data: {
+          destination: stripeAccountId,
+        },
+      },
       success_url: `${origin}/client/payments?status=success&contract_id=${contractId}`,
       cancel_url: `${origin}/client/payments?status=cancel`,
       metadata: {
