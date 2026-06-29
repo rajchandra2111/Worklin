@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { DollarSign, Wallet, ShieldCheck, ArrowRight, ExternalLink } from 'lucide-react';
+import { DollarSign, Wallet, ShieldCheck, ExternalLink } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export function FreelancerEarnings() {

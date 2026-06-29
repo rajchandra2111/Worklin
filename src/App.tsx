@@ -74,11 +74,11 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<FreelancerDashboard />} />
             <Route path="browse" element={<BrowseProjects />} />
-            <Route path="/freelancer" element={<FreelancerDashboard />} />
-            <Route path="/freelancer/messages" element={<Messages />} />
-            <Route path="/freelancer/proposals" element={<FreelancerProposals />} />
-            <Route path="/freelancer/earnings" element={<FreelancerEarnings />} />
-            <Route path="/freelancer/settings" element={<FreelancerSettings />} />
+            <Route path="project/:id" element={<ProjectDetails />} />
+            <Route path="messages" element={<Messages />} />
+            <Route path="proposals" element={<FreelancerProposals />} />
+            <Route path="earnings" element={<FreelancerEarnings />} />
+            <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
         </Route>

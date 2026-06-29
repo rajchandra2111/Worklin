@@ -104,7 +104,7 @@ export function ClientProjectProposals() {
     
     setProcessing('releasing');
     try {
-      const { data, error } = await supabase.functions.invoke('capture-payment', {
+      const { error } = await supabase.functions.invoke('capture-payment', {
         body: { contractId: contract.id }
       });
       if (error) throw error;
