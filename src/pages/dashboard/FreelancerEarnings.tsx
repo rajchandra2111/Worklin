@@ -76,12 +76,13 @@ export function FreelancerEarnings() {
     try {
       const { data, error } = await supabase.functions.invoke('create-connect-account');
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error connecting Stripe:', err);
-      alert('Failed to initialize Stripe connection.');
+      alert(`Failed to initialize Stripe connection: ${err.message}`);
     } finally {
       setConnecting(false);
     }
@@ -92,11 +93,13 @@ export function FreelancerEarnings() {
     try {
       const { data, error } = await supabase.functions.invoke('create-connect-account');
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error connecting Stripe:', err);
+      alert(`Failed to login to Stripe: ${err.message}`);
     } finally {
       setConnecting(false);
     }
