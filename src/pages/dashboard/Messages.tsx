@@ -648,14 +648,13 @@ export function Messages() {
                   }}
                 />
                 
-                <Button 
+                <button 
                   type="submit" 
-                  variant="primary" 
-                  className="shrink-0 h-11 w-11 rounded-full p-0 flex items-center justify-center"
+                  className="shrink-0 h-11 w-11 rounded-full bg-accent text-white hover:bg-accent-light flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   disabled={(!newMessage.trim() && !uploading) || uploading || isFreelancerPreHireEmpty}
                 >
-                  <Send size={18} className="ml-1 -mt-0.5" />
-                </Button>
+                  <Send size={18} />
+                </button>
               </form>
             </div>
           </>
