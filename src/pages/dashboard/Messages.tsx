@@ -17,7 +17,7 @@ type Conversation = {
 };
 
 export function Messages() {
-  const { user, role, onlineUsers } = useAuth();
+  const { user, role } = useAuth();
   const [searchParams] = useSearchParams();
   const initialProposalId = searchParams.get('proposal');
   
@@ -28,10 +28,32 @@ export function Messages() {
   const [uploading, setUploading] = useState(false);
   const [hiring, setHiring] = useState(false);
   
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUserId, setTypingUserId] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Global Presence (Online Status)
+  useEffect(() => {
+    if (!user) return;
+    const presenceChannel = supabase.channel('online-users');
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const activeIds = new Set(Object.values(state).flatMap((p: any) => p.map((u: any) => u.user_id)));
+        setOnlineUsers(activeIds);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ user_id: user.id });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [user]);
 
   // Fetch conversations and unread counts
   useEffect(() => {
