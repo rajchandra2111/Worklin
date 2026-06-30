@@ -17,6 +17,7 @@ import { ClientSettings } from './pages/dashboard/ClientSettings';
 import { FreelancerSettings } from './pages/dashboard/FreelancerSettings';
 import { FreelancerProposals } from './pages/dashboard/FreelancerProposals';
 import { FreelancerEarnings } from './pages/dashboard/FreelancerEarnings';
+import { FreelancerContracts } from './pages/dashboard/FreelancerContracts';
 import { FreelancerProfile } from './pages/profiles/FreelancerProfile';
 import { ClientProfile } from './pages/profiles/ClientProfile';
 
@@ -81,6 +82,7 @@ function App() {
             <Route path="project/:id" element={<ProjectDetails />} />
             <Route path="messages" element={<Messages />} />
             <Route path="proposals" element={<FreelancerProposals />} />
+            <Route path="contracts" element={<FreelancerContracts />} />
             <Route path="earnings" element={<FreelancerEarnings />} />
             <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
