@@ -17,7 +17,8 @@ import { ClientSettings } from './pages/dashboard/ClientSettings';
 import { FreelancerSettings } from './pages/dashboard/FreelancerSettings';
 import { FreelancerProposals } from './pages/dashboard/FreelancerProposals';
 import { FreelancerEarnings } from './pages/dashboard/FreelancerEarnings';
-import { PublicProfile } from './pages/PublicProfile';
+import { FreelancerProfile } from './pages/profiles/FreelancerProfile';
+import { ClientProfile } from './pages/profiles/ClientProfile';
 
 import { Messages } from './pages/dashboard/Messages';
 import { AdminRoute } from './components/auth/AdminRoute';
@@ -55,8 +56,9 @@ function App() {
 
         <Route path="/onboarding" element={<Onboarding />} />
 
-        {/* Public Profile Route */}
-        <Route path="/profile/:id" element={<PublicProfile />} />
+        {/* Public Profile Routes */}
+        <Route path="/freelancer/profile/:username" element={<FreelancerProfile />} />
+        <Route path="/client/profile/:username" element={<ClientProfile />} />
 
         <Route element={<ProtectedRoute allowedRoles={['client']} />}>
           <Route path="/client" element={<DashboardLayout />}>

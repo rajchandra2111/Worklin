@@ -72,9 +72,9 @@ export function DashboardLayout() {
 
   const handleProfileClick = () => {
     if (profile?.username) {
-      navigate(`/profile/${profile.username}`);
+      navigate(`/${role}/profile/${profile.username}`);
     } else if (profile?.id) {
-      navigate(`/profile/${profile.id}`);
+      navigate(`/${role}/profile/${profile.id}`);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -19,6 +19,10 @@ export function Onboarding() {
   // Form states
   const [firstName, setFirstName] = useState(user?.user_metadata?.first_name || '');
   const [lastName, setLastName] = useState(user?.user_metadata?.last_name || '');
+  const [username, setUsername] = useState('');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [companyName, setCompanyName] = useState('');
   const [country, setCountry] = useState('');
   const [skills, setSkills] = useState('');
@@ -34,6 +38,48 @@ export function Onboarding() {
     return <Navigate to={`/${role}/dashboard`} replace />;
   }
 
+  useEffect(() => {
+    if (!username) {
+      setUsernameError(null);
+      setUsernameAvailable(null);
+      return;
+    }
+
+    const checkAvailability = async () => {
+      setCheckingUsername(true);
+      setUsernameError(null);
+
+      if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+        setUsernameError('3-20 lowercase letters, numbers, and underscores only.');
+        setUsernameAvailable(false);
+        setCheckingUsername(false);
+        return;
+      }
+
+      try {
+        const { data: fData } = await supabase.from('freelancer_profiles').select('id').eq('username', username).maybeSingle();
+        const { data: cData } = await supabase.from('client_profiles').select('id').eq('username', username).maybeSingle();
+
+        if (fData || cData) {
+          setUsernameError('Username is already taken');
+          setUsernameAvailable(false);
+        } else {
+          setUsernameAvailable(true);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setCheckingUsername(false);
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      checkAvailability();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [username]);
+
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRole) return;
@@ -42,18 +88,21 @@ export function Onboarding() {
     setError(null);
 
     try {
+      if (usernameAvailable === false || checkingUsername) {
+        setError('Please choose a valid and available username.');
+        setLoading(false);
+        return;
+      }
+
       const table = selectedRole === 'client' ? 'client_profiles' : 'freelancer_profiles';
       const fullName = `${firstName} ${lastName}`.trim();
-      const baseUsername = `${firstName.toLowerCase()}_${lastName.toLowerCase()}`.replace(/[^a-z0-9_]/g, '');
-      const uniqueSuffix = Math.random().toString(36).substring(2, 6);
-      const generatedUsername = `${baseUsername}_${uniqueSuffix}`;
 
       const profileData: any = {
         id: user.id,
         first_name: firstName,
         last_name: lastName,
         full_name: fullName,
-        username: generatedUsername,
+        username: username,
         country: country,
       };
 
@@ -146,6 +195,28 @@ export function Onboarding() {
                   value={lastName} 
                   onChange={e => setLastName(e.target.value)}
                   className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-[13px] font-medium text-text-secondary mb-1.5 flex justify-between">
+                <span>Username</span>
+                {checkingUsername && <span className="text-text-muted text-xs">Checking...</span>}
+                {usernameAvailable && !checkingUsername && <span className="text-green-500 text-xs">Available</span>}
+                {usernameError && !checkingUsername && <span className="text-red-500 text-xs">{usernameError}</span>}
+              </label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-surface text-text-muted text-sm">
+                  @
+                </span>
+                <input 
+                  type="text" 
+                  required 
+                  value={username} 
+                  onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  placeholder="johndoe"
+                  className={`flex-1 p-[11px] px-3.5 border-[1.5px] border-border rounded-r-md font-inherit text-sm outline-none focus:border-accent ${usernameError ? 'border-red-300 focus:border-red-500 ring-1 ring-red-100' : ''}`}
                 />
               </div>
             </div>

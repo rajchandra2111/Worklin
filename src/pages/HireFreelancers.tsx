@@ -231,7 +231,7 @@ export function HireFreelancers() {
               {freelancers.map((freelancer) => (
                 <div 
                   key={freelancer.id}
-                  onClick={() => navigate(`/profile/${freelancer.id}`)}
+                  onClick={() => navigate(`/freelancer/profile/${freelancer.username || freelancer.id}`)}
                   className="bg-white border border-border rounded-xl p-6 transition-all duration-300 cursor-pointer hover:border-accent hover:shadow-card group relative"
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -267,7 +267,7 @@ export function HireFreelancers() {
                           ${freelancer.hourly_rate}<span className="text-sm font-normal text-text-muted">/hr</span>
                         </div>
                       )}
-                      <Button variant="outline" className="mt-3 md:mt-2 w-full md:w-auto" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${freelancer.id}`); }}>
+                      <Button variant="outline" className="mt-3 md:mt-2 w-full md:w-auto" onClick={(e) => { e.stopPropagation(); navigate(`/freelancer/profile/${freelancer.username || freelancer.id}`); }}>
                         View Profile
                       </Button>
                     </div>
