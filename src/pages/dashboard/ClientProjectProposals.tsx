@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Search, ChevronRight, CheckCircle, Clock, ShieldCheck, Lock, ArrowLeft, Star, CreditCard } from 'lucide-react';
+import { CheckCircle, ShieldCheck, Lock, ArrowLeft, Star, CreditCard } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export function ClientProjectProposals() {

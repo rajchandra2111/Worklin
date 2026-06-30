@@ -385,7 +385,7 @@ export function FreelancerSettings() {
                   <PortfolioImageUpload 
                     url={port.image_url} 
                     onUpload={(url) => updatePortfolio(index, 'image_url', url)} 
-                    onRemove={() => updatePortfolio(index, 'image_url', null)} 
+                    onRemove={() => updatePortfolio(index, 'image_url', '')} 
                   />
                   <button type="button" onClick={() => removePortfolio(index)} className="absolute top-4 right-4 text-white hover:text-red-300 bg-black/40 hover:bg-black/60 p-1.5 rounded-md border-none cursor-pointer z-10 transition-colors shadow-sm">
                     <Trash2 size={18} />

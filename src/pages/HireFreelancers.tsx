@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Search, Star, MapPin, ChevronDown } from 'lucide-react';
+import { Search, Star, MapPin } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useUiStore } from '../store/uiStore';
 import { VerifiedBadge } from '../components/ui/VerifiedBadge';
