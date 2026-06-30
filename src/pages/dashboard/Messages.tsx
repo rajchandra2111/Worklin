@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Send, Paperclip, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Send, Paperclip, FileText, CheckCircle, Clock, Check, CheckCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 type Conversation = {
@@ -11,6 +11,7 @@ type Conversation = {
   type: 'contract' | 'proposal';
   projectTitle: string;
   otherPartyName: string;
+  otherPartyId: string;
   status: string;
   project_id: string;
 };
@@ -26,50 +27,151 @@ export function Messages() {
   const [newMessage, setNewMessage] = useState('');
   const [uploading, setUploading] = useState(false);
   const [hiring, setHiring] = useState(false);
+  
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [typingUserId, setTypingUserId] = useState<string | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch conversations
+  // Global Presence (Online Status)
+  useEffect(() => {
+    if (!user) return;
+    const presenceChannel = supabase.channel('online-users');
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const activeIds = new Set(Object.values(state).flatMap((p: any) => p.map((u: any) => u.user_id)));
+        setOnlineUsers(activeIds);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ user_id: user.id });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [user]);
+
+  // Fetch conversations and unread counts
   useEffect(() => {
     if (user) {
       fetchConversations();
+      fetchUnreadCounts();
     }
   }, [user, initialProposalId]);
 
-  // Fetch messages and subscribe to real-time updates when active conversation changes
+  // Fetch messages and handle specific conversation typing/updates
   useEffect(() => {
-    if (activeConversationId) {
-      const isContract = activeConversationId.startsWith('contract_');
-      const rawId = activeConversationId.replace('contract_', '').replace('proposal_', '');
-      const filterCol = isContract ? 'contract_id' : 'proposal_id';
+    if (!activeConversationId || !user) return;
+    
+    const isContract = activeConversationId.startsWith('contract_');
+    const rawId = activeConversationId.replace('contract_', '').replace('proposal_', '');
+    const filterCol = isContract ? 'contract_id' : 'proposal_id';
 
-      fetchMessages(rawId, filterCol);
+    fetchMessages(rawId, filterCol);
 
-      const channel = supabase
-        .channel(`messages:${activeConversationId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `${filterCol}=eq.${rawId}`,
-          },
-          (payload) => {
-            setMessages((current) => [...current, payload.new]);
+    const channel = supabase
+      .channel(`messages:${activeConversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `${filterCol}=eq.${rawId}`,
+        },
+        (payload) => {
+          setMessages((current) => [...current, payload.new]);
+          if (payload.new.sender_id !== user.id) {
+            // If we are looking at this chat, we should mark it as read immediately
+            markAsRead(activeConversationId);
           }
-        )
-        .subscribe();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `${filterCol}=eq.${rawId}`,
+        },
+        (payload) => {
+          // Update read receipts in real-time
+          setMessages(current => current.map(m => m.id === payload.new.id ? payload.new : m));
+        }
+      )
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload.user_id !== user.id) {
+          setTypingUserId(payload.payload.user_id);
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setTypingUserId(null), 3000);
+        }
+      })
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    return () => {
+      supabase.removeChannel(channel);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
   }, [activeConversationId]);
 
-  // Auto-scroll to bottom of messages
+  // Auto-scroll and auto-read when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    
+    // Mark as read if there are unread messages from the other person
+    if (activeConversationId && messages.length > 0) {
+      const hasUnread = messages.some(m => !m.read_at && m.sender_id !== user?.id);
+      if (hasUnread) {
+        markAsRead(activeConversationId);
+      }
+    }
+  }, [messages, activeConversationId]);
+
+  const fetchUnreadCounts = async () => {
+    try {
+      const { data } = await supabase
+        .from('messages')
+        .select('contract_id, proposal_id')
+        .is('read_at', null)
+        .neq('sender_id', user?.id);
+        
+      if (data) {
+        const counts: Record<string, number> = {};
+        data.forEach(msg => {
+          const key = msg.contract_id ? `contract_${msg.contract_id}` : `proposal_${msg.proposal_id}`;
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        setUnreadCounts(counts);
+      }
+    } catch (err) {
+      console.error('Error fetching unread counts:', err);
+    }
+  };
+
+  const markAsRead = async (convId: string) => {
+    if (!user) return;
+    const isContract = convId.startsWith('contract_');
+    const rawId = convId.replace('contract_', '').replace('proposal_', '');
+    
+    try {
+      await supabase.rpc('mark_messages_as_read', {
+        p_conversation_id: rawId,
+        p_is_contract: isContract,
+        p_user_id: user.id
+      });
+      
+      // Update local states
+      setMessages(prev => prev.map(m => (!m.read_at && m.sender_id !== user.id) ? { ...m, read_at: new Date().toISOString() } : m));
+      setUnreadCounts(prev => ({ ...prev, [convId]: 0 }));
+    } catch (err) {
+      console.error('Error marking as read:', err);
+    }
+  };
 
   const fetchConversations = async () => {
     try {
@@ -77,7 +179,7 @@ export function Messages() {
       const contractQuery = supabase
         .from('contracts')
         .select(`
-          id, project_id, status,
+          id, project_id, status, client_id, freelancer_id,
           projects(title),
           client:client_profiles(full_name, company_name),
           freelancer:freelancer_profiles(full_name)
@@ -90,7 +192,7 @@ export function Messages() {
       const proposalQuery = supabase
         .from('proposals')
         .select(`
-          id, project_id, status,
+          id, project_id, status, freelancer_id,
           projects!inner(title, client_id),
           freelancer:freelancer_profiles(full_name),
           messages!inner(id)
@@ -107,7 +209,7 @@ export function Messages() {
           const { data: single } = await supabase
             .from('proposals')
             .select(`
-              id, project_id, status,
+              id, project_id, status, freelancer_id,
               projects!inner(title, client_id),
               freelancer:freelancer_profiles(full_name)
             `)
@@ -124,6 +226,7 @@ export function Messages() {
         type: 'contract',
         projectTitle: c.projects?.title || 'Unknown Project',
         otherPartyName: role === 'client' ? c.freelancer?.full_name : (c.client?.company_name || c.client?.full_name || 'Client'),
+        otherPartyId: role === 'client' ? c.freelancer_id : c.client_id,
         status: c.status,
         project_id: c.project_id
       }));
@@ -134,6 +237,7 @@ export function Messages() {
         type: 'proposal',
         projectTitle: p.projects?.title || 'Unknown Project',
         otherPartyName: role === 'client' ? p.freelancer?.full_name : 'Client',
+        otherPartyId: role === 'client' ? p.freelancer_id : p.projects?.client_id,
         status: 'Pre-Hire',
         project_id: p.project_id
       }));
@@ -148,12 +252,12 @@ export function Messages() {
           type: 'proposal',
           projectTitle: initP.projects?.title || 'Unknown Project',
           otherPartyName: initP.freelancer?.full_name || 'Freelancer',
+          otherPartyId: role === 'client' ? initP.freelancer_id : initP.projects?.client_id,
           status: 'Pre-Hire',
           project_id: initP.project_id
         });
       }
 
-      // Sort so most recent or newly opened is first? For now just set state.
       setConversations(all);
 
       if (initialProposalId && role === 'client') {
@@ -179,6 +283,15 @@ export function Messages() {
     } catch (err) {
       console.error('Error fetching messages:', err);
     }
+  };
+
+  const handleTyping = () => {
+    if (!activeConversationId || !user) return;
+    supabase.channel(`messages:${activeConversationId}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { user_id: user.id }
+    });
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -253,12 +366,9 @@ export function Messages() {
     if (!activeConv || activeConv.type !== 'proposal') return;
     setHiring(true);
     try {
-      // 1. Accept Proposal (creates contract)
       const { error } = await supabase.rpc('accept_proposal', { p_proposal_id: activeConv.rawId });
       if (error) throw error;
 
-      // Note: A SQL trigger is set up on the backend to migrate 
-      // the messages from proposal_id to the new contract_id seamlessly.
       await fetchConversations();
     } catch (err) {
       console.error(err);
@@ -269,8 +379,6 @@ export function Messages() {
   };
 
   const activeConv = conversations.find(c => c.id === activeConversationId);
-
-  // Freelancer pre-hire messaging restriction check
   const isFreelancerPreHireEmpty = role === 'freelancer' && activeConv?.type === 'proposal' && messages.length === 0;
 
   return (
@@ -287,49 +395,69 @@ export function Messages() {
               No active conversations yet.
             </div>
           ) : (
-            conversations.map(conv => (
-              <div 
-                key={conv.id}
-                onClick={() => setActiveConversationId(conv.id)}
-                className={`p-4 cursor-pointer border-b border-border transition-colors ${
-                  activeConversationId === conv.id ? 'bg-accent/10 border-l-4 border-l-accent' : 'hover:bg-white border-l-4 border-l-transparent'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <div className="font-semibold text-text-primary truncate">
-                    {conv.otherPartyName}
+            conversations.map(conv => {
+              const unread = unreadCounts[conv.id] || 0;
+              const isOnline = onlineUsers.has(conv.otherPartyId);
+              
+              return (
+                <div 
+                  key={conv.id}
+                  onClick={() => setActiveConversationId(conv.id)}
+                  className={`p-4 cursor-pointer border-b border-border transition-colors relative ${
+                    activeConversationId === conv.id ? 'bg-accent/10 border-l-4 border-l-accent' : 'hover:bg-white border-l-4 border-l-transparent'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="font-semibold text-text-primary flex items-center gap-2 truncate">
+                      <div className="relative">
+                        {conv.otherPartyName}
+                        {isOnline && (
+                          <div className="absolute -top-1 -right-3 w-2.5 h-2.5 bg-green-500 rounded-full border border-white" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {unread > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          {unread}
+                        </span>
+                      )}
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        conv.type === 'proposal' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
+                      }`}>
+                        {conv.type === 'proposal' ? 'Pre-Hire' : 'Contract'}
+                      </span>
+                    </div>
                   </div>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                    conv.type === 'proposal' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
-                  }`}>
-                    {conv.type === 'proposal' ? 'Pre-Hire' : 'Contract'}
-                  </span>
+                  <div className="text-xs text-text-secondary truncate pr-8">
+                    {conv.projectTitle}
+                  </div>
                 </div>
-                <div className="text-xs text-text-secondary truncate">
-                  {conv.projectTitle}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white relative">
         {activeConv ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-text-primary text-lg">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-bold text-text-primary text-lg flex items-center gap-2">
                     {activeConv.otherPartyName}
+                    {onlineUsers.has(activeConv.otherPartyId) && (
+                      <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Online</span>
+                    )}
                   </h3>
                   {activeConv.type === 'contract' && (
                     <span className="text-green-600"><CheckCircle size={16} /></span>
                   )}
                 </div>
-                <p className="text-xs text-text-secondary">
+                <p className="text-xs text-text-secondary mt-0.5">
                   {activeConv.projectTitle}
                 </p>
               </div>
@@ -389,8 +517,13 @@ export function Messages() {
                         </div>
                       )}
                       
-                      <div className={`text-[10px] mt-1 text-right ${isMine ? 'text-white/70' : 'text-text-muted'}`}>
+                      <div className={`flex items-center justify-end gap-1 text-[10px] mt-1 ${isMine ? 'text-white/80' : 'text-text-muted'}`}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {isMine && (
+                          <span className="ml-0.5">
+                            {msg.read_at ? <CheckCheck size={14} className="text-blue-200" /> : <Check size={14} className="opacity-70" />}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -399,8 +532,20 @@ export function Messages() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Typing Indicator */}
+            {typingUserId && typingUserId === activeConv.otherPartyId && (
+              <div className="absolute bottom-20 left-6 text-xs text-text-secondary bg-white px-3 py-1.5 rounded-full shadow-sm border border-border flex items-center gap-2 z-10">
+                <span className="flex gap-0.5">
+                  <span className="w-1.5 h-1.5 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+                {activeConv.otherPartyName} is typing...
+              </div>
+            )}
+
             {/* Input Area */}
-            <div className="p-4 border-t border-border bg-white">
+            <div className="p-4 border-t border-border bg-white relative z-20">
               <form onSubmit={handleSendMessage} className="flex items-end gap-2">
                 <label className="cursor-pointer shrink-0 p-3 text-text-secondary hover:text-accent hover:bg-accent/10 rounded-full transition-colors relative">
                   <input 
@@ -418,7 +563,10 @@ export function Messages() {
                 
                 <textarea
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    handleTyping();
+                  }}
                   placeholder={isFreelancerPreHireEmpty ? "Waiting for client to start conversation..." : "Type a message..."}
                   className="flex-1 max-h-32 min-h-[44px] py-3 px-4 bg-surface border border-border rounded-xl focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent resize-none text-[15px]"
                   rows={1}
