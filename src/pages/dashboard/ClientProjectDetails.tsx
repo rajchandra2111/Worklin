@@ -350,7 +350,7 @@ export function ClientProjectDetails() {
 
                   {project.status === 'open' && (
                     <div className="flex justify-end gap-3">
-                      <Button variant="outline">Message</Button>
+                      <Button variant="outline" onClick={() => navigate(`/client/messages?proposal=${proposal.id}`)}>Message</Button>
                       <Button 
                         onClick={() => handleAcceptProposal(proposal.id)}
                         disabled={processing === proposal.id}
