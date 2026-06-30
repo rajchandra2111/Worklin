@@ -85,7 +85,7 @@ export function Billing() {
           </div>
           <div>
             {!subscription ? (
-              <Button onClick={() => navigate('/pricing')} variant="primary">
+              <Button onClick={() => navigate(`/${role}/pricing`)} variant="primary">
                 Upgrade Plan
               </Button>
             ) : (

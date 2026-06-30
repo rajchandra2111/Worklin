@@ -74,6 +74,7 @@ function App() {
             <Route path="project/:id" element={<ClientProjectDetails />} />
             <Route path="messages" element={<Messages />} />
             <Route path="billing" element={<Billing />} />
+            <Route path="pricing" element={<Pricing inDashboard={true} />} />
             <Route path="settings" element={<ClientSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
@@ -90,6 +91,7 @@ function App() {
             <Route path="proposals" element={<FreelancerProposals />} />
             <Route path="contracts" element={<FreelancerContracts />} />
             <Route path="billing" element={<Billing />} />
+            <Route path="pricing" element={<Pricing inDashboard={true} />} />
             <Route path="earnings" element={<FreelancerEarnings />} />
             <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />

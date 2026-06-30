@@ -5,11 +5,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-export function Pricing() {
+interface PricingProps {
+  inDashboard?: boolean;
+}
+
+export function Pricing({ inDashboard = false }: PricingProps) {
   const { user, role } = useAuth();
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [viewRole, setViewRole] = useState<'client' | 'freelancer'>(role || 'client');
+
+  // Force viewRole if inDashboard and role exists
+  if (inDashboard && role && viewRole !== role) {
+    setViewRole(role as 'client' | 'freelancer');
+  }
 
   const plans = {
     client: [
@@ -152,36 +161,40 @@ export function Pricing() {
   const currentPlans = plans[viewRole];
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] py-20 px-6">
+    <div className={inDashboard ? "" : "min-h-screen bg-[#FDFDFD] py-20 px-6"}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h1 className="font-tenor text-4xl md:text-5xl font-bold text-text-primary mb-6 tracking-tight">
-            Simple, transparent pricing
+            {inDashboard ? "Upgrade your plan" : "Simple, transparent pricing"}
           </h1>
           <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-10">
-            Whether you're hiring top talent or building your freelance empire, we have a plan designed to help you succeed.
+            {inDashboard 
+              ? "Choose the plan that fits your needs and take your work to the next level." 
+              : "Whether you're hiring top talent or building your freelance empire, we have a plan designed to help you succeed."}
           </p>
 
-          <div className="flex items-center justify-center gap-2 mb-10">
-            <div className="bg-surface p-1 rounded-full border border-border inline-flex">
-              <button
-                onClick={() => setViewRole('client')}
-                className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                  viewRole === 'client' ? 'bg-white text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                For Clients
-              </button>
-              <button
-                onClick={() => setViewRole('freelancer')}
-                className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                  viewRole === 'freelancer' ? 'bg-white text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                For Freelancers
-              </button>
+          {!inDashboard && (
+            <div className="flex items-center justify-center gap-2 mb-10">
+              <div className="bg-surface p-1 rounded-full border border-border inline-flex">
+                <button
+                  onClick={() => setViewRole('client')}
+                  className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                    viewRole === 'client' ? 'bg-white text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  For Clients
+                </button>
+                <button
+                  onClick={() => setViewRole('freelancer')}
+                  className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                    viewRole === 'freelancer' ? 'bg-white text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  For Freelancers
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center justify-center gap-4">
             <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-text-primary' : 'text-text-muted'}`}>Monthly</span>
