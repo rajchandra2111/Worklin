@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { MapPin, Clock, Languages, CheckCircle2, Star, Briefcase, Calendar, FolderOpen, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { VerifiedBadge } from '../components/ui/VerifiedBadge';
 
 export function PublicProfile() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +27,13 @@ export function PublicProfile() {
         .single();
 
       if (freelancerData) {
-        setProfile(freelancerData);
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('*, client:client_profiles(full_name, company_name, avatar_url, company_logo)')
+          .eq('freelancer_id', freelancerData.id)
+          .order('created_at', { ascending: false });
+          
+        setProfile({ ...freelancerData, reviews_list: reviewsData || [] });
         setType('freelancer');
         return;
       }
@@ -39,7 +46,13 @@ export function PublicProfile() {
         .single();
 
       if (clientData) {
-        setProfile(clientData);
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('*, freelancer:freelancer_profiles(full_name, avatar_url)')
+          .eq('client_id', clientData.id)
+          .order('created_at', { ascending: false });
+          
+        setProfile({ ...clientData, reviews_list: reviewsData || [] });
         setType('client');
       }
     } catch (err) {
@@ -79,7 +92,10 @@ export function PublicProfile() {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
                   <div>
-                    <h1 className="text-3xl font-tenor font-bold mb-1">{p.full_name}</h1>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h1 className="text-3xl font-tenor font-bold">{p.full_name}</h1>
+                      <VerifiedBadge verified={p.identity_verified} size={24} />
+                    </div>
                     <p className="text-[17px] text-text-secondary">{p.professional_title || 'Freelance Professional'}</p>
                   </div>
                   <div className="flex gap-3">
@@ -178,13 +194,19 @@ export function PublicProfile() {
                 <h2 className="text-xl font-bold font-tenor mb-6">Portfolio</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {p.portfolio && p.portfolio.length > 0 ? p.portfolio.map((port: any, i: number) => (
-                    <div key={i} className="border border-border rounded-xl bg-white overflow-hidden group hover:border-accent hover:shadow-sm transition-all">
-                      <div className="h-40 bg-surface border-b border-border flex items-center justify-center">
-                        <FolderOpen size={40} className="text-text-muted group-hover:text-accent transition-colors" strokeWidth={1} />
-                      </div>
-                      <div className="p-5">
+                    <div key={i} className="border border-border rounded-xl bg-white overflow-hidden group hover:border-accent hover:shadow-sm transition-all flex flex-col">
+                      {port.image_url ? (
+                        <div className="h-40 w-full overflow-hidden border-b border-border bg-surface">
+                          <img src={port.image_url.startsWith('http') ? port.image_url : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/portfolios/${port.image_url}`} alt={port.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      ) : (
+                        <div className="h-40 bg-surface border-b border-border flex items-center justify-center shrink-0">
+                          <FolderOpen size={40} className="text-text-muted group-hover:text-accent transition-colors" strokeWidth={1} />
+                        </div>
+                      )}
+                      <div className="p-5 flex-1 flex flex-col">
                         <h3 className="font-semibold mb-1.5 text-[15px]">{port.name}</h3>
-                        <p className="text-[13px] text-text-secondary mb-4 line-clamp-2">{port.description}</p>
+                        <p className="text-[13px] text-text-secondary mb-4 line-clamp-2 flex-1">{port.description}</p>
                         {port.tech && <div className="text-xs text-text-muted font-medium mb-4">{port.tech}</div>}
                         <div className="flex gap-3">
                           {port.url && <a href={port.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-accent hover:underline">Live Demo</a>}
@@ -202,7 +224,32 @@ export function PublicProfile() {
             {activeTab === 'reviews' && (
               <section>
                 <h2 className="text-xl font-bold font-tenor mb-6">Client Reviews</h2>
-                <p className="text-text-muted text-sm">No reviews yet.</p>
+                <div className="space-y-6">
+                  {p.reviews_list && p.reviews_list.length > 0 ? p.reviews_list.map((review: any) => (
+                    <div key={review.id} className="border-b border-border pb-6 last:border-0">
+                      <div className="flex gap-4">
+                        <div className="w-10 h-10 rounded-full bg-accent text-white flex flex-shrink-0 items-center justify-center font-bold overflow-hidden">
+                           {(review.client?.company_logo || review.client?.avatar_url) ? <img src={(review.client.company_logo || review.client.avatar_url).startsWith('http') ? (review.client.company_logo || review.client.avatar_url) : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${review.client.company_logo || review.client.avatar_url}`} alt={review.client?.full_name} className="w-full h-full object-cover"/> : (review.client?.company_name?.[0] || review.client?.full_name?.[0] || 'C')}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{review.client?.company_name || review.client?.full_name || 'Client'}</h4>
+                          <div className="flex items-center gap-2 mt-1 mb-2 text-sm text-text-secondary">
+                            <div className="flex items-center">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star key={s} size={14} className={s <= review.rating ? "text-warning fill-warning" : "text-border"} />
+                              ))}
+                            </div>
+                            <span>•</span>
+                            <span>{new Date(review.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-sm text-text-primary leading-relaxed">{review.feedback}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-text-muted text-sm">No reviews yet.</p>
+                  )}
+                </div>
               </section>
             )}
 
@@ -245,7 +292,10 @@ export function PublicProfile() {
               {c.company_logo ? <img src={c.company_logo.startsWith('http') ? c.company_logo : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${c.company_logo}`} alt={c.company_name || c.full_name} className="w-full h-full object-cover"/> : (c.company_name?.[0] || c.first_name[0])}
             </div>
             <div className="flex-1">
-              <h1 className="text-3xl font-tenor font-bold mb-1">{c.company_name || c.full_name}</h1>
+              <div className="flex items-center gap-2 mb-1 justify-center md:justify-start">
+                <h1 className="text-3xl font-tenor font-bold">{c.company_name || c.full_name}</h1>
+                <VerifiedBadge verified={c.identity_verified} size={24} />
+              </div>
               <p className="text-[17px] text-text-secondary mb-4">{c.industry || 'Client'}</p>
               
               <div className="flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 text-sm text-text-secondary">
@@ -314,7 +364,32 @@ export function PublicProfile() {
           {activeTab === 'reviews' && (
             <section>
               <h2 className="text-xl font-bold font-tenor mb-6">Freelancer Reviews</h2>
-              <p className="text-text-muted text-sm">No reviews yet.</p>
+              <div className="space-y-6">
+                {c.reviews_list && c.reviews_list.length > 0 ? c.reviews_list.map((review: any) => (
+                  <div key={review.id} className="border-b border-border pb-6 last:border-0">
+                    <div className="flex gap-4">
+                      <div className="w-10 h-10 rounded-full bg-accent text-white flex flex-shrink-0 items-center justify-center font-bold overflow-hidden">
+                          {review.freelancer?.avatar_url ? <img src={review.freelancer.avatar_url.startsWith('http') ? review.freelancer.avatar_url : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${review.freelancer.avatar_url}`} alt={review.freelancer?.full_name} className="w-full h-full object-cover"/> : (review.freelancer?.full_name?.[0] || 'F')}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{review.freelancer?.full_name || 'Freelancer'}</h4>
+                        <div className="flex items-center gap-2 mt-1 mb-2 text-sm text-text-secondary">
+                          <div className="flex items-center">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star key={s} size={14} className={s <= review.rating ? "text-warning fill-warning" : "text-border"} />
+                            ))}
+                          </div>
+                          <span>•</span>
+                          <span>{new Date(review.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-text-primary leading-relaxed">{review.feedback}</p>
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-text-muted text-sm">No reviews yet.</p>
+                )}
+              </div>
             </section>
           )}
 

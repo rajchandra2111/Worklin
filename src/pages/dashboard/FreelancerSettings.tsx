@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Button } from '../../components/ui/Button';
 import { AvatarUpload } from '../../components/ui/AvatarUpload';
+import { PortfolioImageUpload } from '../../components/ui/PortfolioImageUpload';
 import { Plus, Trash2 } from 'lucide-react';
 
 export function FreelancerSettings() {
@@ -56,7 +57,8 @@ export function FreelancerSettings() {
           experience: data.experience || [],
           education: data.education || [],
           portfolio: data.portfolio || [],
-          work_preferences: data.work_preferences || { size: [], engagement: [] }
+          work_preferences: data.work_preferences || { size: [], engagement: [] },
+          identity_verified: data.identity_verified || false
         });
       }
     } catch (err: any) {
@@ -165,6 +167,34 @@ export function FreelancerSettings() {
     } finally {
       setSaving(false);
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+    }
+  };
+
+  const handleVerifyIdentity = async () => {
+    try {
+      setSaving(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-identity-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ role: 'freelancer' })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create verification session');
+      
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('Error starting verification:', err);
+      setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -351,11 +381,16 @@ export function FreelancerSettings() {
           ) : (
             <div className="space-y-6">
               {profile.portfolio.map((port: any, index: number) => (
-                <div key={index} className="p-4 border border-border rounded-lg bg-surface/50 relative group">
-                  <button type="button" onClick={() => removePortfolio(index)} className="absolute top-4 right-4 text-text-muted hover:text-red-500 bg-transparent border-none cursor-pointer">
+                <div key={index} className="border border-border rounded-lg bg-surface/50 relative group flex flex-col overflow-hidden">
+                  <PortfolioImageUpload 
+                    url={port.image_url} 
+                    onUpload={(url) => updatePortfolio(index, 'image_url', url)} 
+                    onRemove={() => updatePortfolio(index, 'image_url', null)} 
+                  />
+                  <button type="button" onClick={() => removePortfolio(index)} className="absolute top-4 right-4 text-white hover:text-red-300 bg-black/40 hover:bg-black/60 p-1.5 rounded-md border-none cursor-pointer z-10 transition-colors shadow-sm">
                     <Trash2 size={18} />
                   </button>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-8">
+                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-8">
                     <div className="md:col-span-2">
                       <label className="block text-xs font-medium text-text-secondary mb-1">Project Name</label>
                       <input type="text" value={port.name} onChange={e => updatePortfolio(index, 'name', e.target.value)} className="w-full p-[9px] border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
@@ -373,7 +408,7 @@ export function FreelancerSettings() {
                       <input type="text" value={port.tech} placeholder="React, Node, Postgres" onChange={e => updatePortfolio(index, 'tech', e.target.value)} className="w-full p-[9px] border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
                     </div>
                   </div>
-                  <div>
+                  <div className="p-4 pt-0">
                     <label className="block text-xs font-medium text-text-secondary mb-1">Description</label>
                     <textarea value={port.description} onChange={e => updatePortfolio(index, 'description', e.target.value)} className="w-full p-[9px] border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent h-20 resize-none" />
                   </div>
@@ -381,6 +416,31 @@ export function FreelancerSettings() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Trust & Verification */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-border shadow-sm">
+          <h2 className="text-lg font-semibold mb-5 pb-3 border-b border-border">Trust & Verification</h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-lg border border-border bg-surface/50">
+            <div>
+              <h3 className="font-semibold text-text-primary mb-1">Identity Verification</h3>
+              <p className="text-sm text-text-secondary">Verify your identity with a government ID to earn the Verified Badge and build trust with clients.</p>
+            </div>
+            <div className="shrink-0">
+              {profile.identity_verified ? (
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg font-medium text-sm">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Verified
+                </div>
+              ) : (
+                <Button type="button" variant="outline" onClick={handleVerifyIdentity} disabled={saving}>
+                  Verify Identity
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end">

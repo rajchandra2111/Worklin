@@ -16,6 +16,8 @@ export function ProjectDetails() {
   const [error, setError] = useState<string | null>(null);
 
   const [existingProposal, setExistingProposal] = useState<any>(null);
+  const [contract, setContract] = useState<any>(null);
+  const [submissionNotes, setSubmissionNotes] = useState('');
 
   // Proposal Form State
   const [showProposalForm, setShowProposalForm] = useState(false);
@@ -44,9 +46,41 @@ export function ProjectDetails() {
       
       if (data) {
         setExistingProposal(data);
+        if (data.status === 'accepted') {
+          // Fetch the associated contract
+          const { data: contractData } = await supabase
+            .from('contracts')
+            .select('*')
+            .eq('proposal_id', data.id)
+            .maybeSingle();
+          if (contractData) setContract(contractData);
+        }
       }
     } catch (err) {
       console.error('Error fetching existing proposal:', err);
+    }
+  };
+
+  const handleSubmitWork = async () => {
+    if (!contract || !submissionNotes.trim()) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('contracts')
+        .update({
+          work_submitted_at: new Date().toISOString(),
+          submission_notes: submissionNotes
+        })
+        .eq('id', contract.id);
+      
+      if (error) throw error;
+      alert('Work submitted successfully! Waiting for client approval.');
+      fetchExistingProposal(); // Refresh data
+    } catch (err: any) {
+      console.error('Error submitting work:', err);
+      alert(err.message || 'Failed to submit work.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -157,6 +191,46 @@ export function ProjectDetails() {
                 </span>
               ))}
             </div>
+            
+            {/* Submit Work Section */}
+            {contract && contract.status === 'active' && !contract.work_submitted_at && (
+              <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 mt-8">
+                <h3 className="font-bold text-blue-900 mb-2 font-tenor text-lg">Submit Deliverables</h3>
+                <p className="text-sm text-blue-800 mb-4">The client has funded the escrow. Submit your work or final notes here to request payment release.</p>
+                <textarea
+                  value={submissionNotes}
+                  onChange={(e) => setSubmissionNotes(e.target.value)}
+                  placeholder="Provide links to work, attachments, or final notes..."
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-[15px] mb-4 bg-white"
+                  rows={4}
+                />
+                <Button variant="primary" onClick={handleSubmitWork} disabled={submitting || !submissionNotes.trim()}>
+                  {submitting ? 'Submitting...' : 'Submit Work for Payment'}
+                </Button>
+              </div>
+            )}
+            
+            {contract && contract.work_submitted_at && contract.status !== 'completed' && (
+              <div className="bg-amber-50 p-6 rounded-xl border border-amber-200 mt-8 flex items-center gap-4 text-amber-800">
+                <Clock size={32} className="shrink-0" />
+                <div>
+                  <h3 className="font-bold text-lg mb-1">Work Submitted</h3>
+                  <p className="text-sm">You have submitted your deliverables. Waiting for the client to approve and release funds.</p>
+                </div>
+              </div>
+            )}
+            
+            {contract && contract.status === 'completed' && (
+              <div className="bg-green-50 p-6 rounded-xl border border-green-200 mt-8 flex items-center gap-4 text-green-800">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                  <DollarSign size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">Project Completed</h3>
+                  <p className="text-sm">The client has approved your work and released the funds to your account!</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Proposal Form Section */}

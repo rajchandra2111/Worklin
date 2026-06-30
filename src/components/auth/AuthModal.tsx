@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUiStore } from '../../store/uiStore';
 import { Button } from '../ui/Button';
 import { Building2, Briefcase, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export function AuthModal() {
+  const navigate = useNavigate();
   const { authModalTab, signupRole, closeAuthModal, openAuthModal, setSignupRole } = useUiStore();
 
   const [step, setStep] = useState<'selection' | 'form'>('selection');
@@ -59,6 +61,7 @@ export function AuthModal() {
       if (error) throw error;
       
       closeAuthModal();
+      navigate(`/${intendedRole}/dashboard`);
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {
@@ -103,6 +106,7 @@ export function AuthModal() {
       }
       
       closeAuthModal();
+      navigate(`/${intendedRole}/dashboard`);
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
     } finally {
@@ -122,7 +126,7 @@ export function AuthModal() {
             access_type: 'offline',
             prompt: 'consent',
           },
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/${intendedRole}/dashboard`,
         },
       });
       if (error) throw error;

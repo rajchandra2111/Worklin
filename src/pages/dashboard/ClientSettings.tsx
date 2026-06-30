@@ -44,7 +44,8 @@ export function ClientSettings() {
       if (data) {
         setProfile({
           ...data,
-          hiring_interests: data.hiring_interests || []
+          hiring_interests: data.hiring_interests || [],
+          identity_verified: data.identity_verified || false
         });
       }
     } catch (err: any) {
@@ -111,6 +112,34 @@ export function ClientSettings() {
     } finally {
       setSaving(false);
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+    }
+  };
+
+  const handleVerifyIdentity = async () => {
+    try {
+      setSaving(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-identity-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ role: 'client' })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create verification session');
+      
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('Error starting verification:', err);
+      setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -242,6 +271,31 @@ export function ClientSettings() {
               onKeyDown={handleAddInterest}
               className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent"
             />
+          </div>
+        </div>
+
+        {/* Trust & Verification */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-border shadow-sm">
+          <h2 className="text-lg font-semibold mb-5 pb-3 border-b border-border">Trust & Verification</h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-lg border border-border bg-surface/50">
+            <div>
+              <h3 className="font-semibold text-text-primary mb-1">Company Identity Verification</h3>
+              <p className="text-sm text-text-secondary">Verify your identity to earn the Verified Badge and build trust with top-tier freelancers.</p>
+            </div>
+            <div className="shrink-0">
+              {profile.identity_verified ? (
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg font-medium text-sm">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Verified
+                </div>
+              ) : (
+                <Button type="button" variant="outline" onClick={handleVerifyIdentity} disabled={saving}>
+                  Verify Identity
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

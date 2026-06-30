@@ -20,6 +20,8 @@ import { FreelancerEarnings } from './pages/dashboard/FreelancerEarnings';
 import { PublicProfile } from './pages/PublicProfile';
 
 import { Messages } from './pages/dashboard/Messages';
+import { AdminRoute } from './components/auth/AdminRoute';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 
 // Simple wrapper components that just trigger the modal and redirect to home
 function LoginRedirect() {
@@ -81,6 +83,11 @@ function App() {
             <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
+        </Route>
+
+        {/* Admin Route */}
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

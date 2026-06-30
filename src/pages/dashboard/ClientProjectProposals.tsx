@@ -1,18 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { ArrowLeft, CheckCircle, ShieldCheck, CreditCard, Lock } from 'lucide-react';
+import { Search, ChevronRight, CheckCircle, Clock, ShieldCheck, Lock, ArrowLeft, Star, CreditCard } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export function ClientProjectProposals() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [project, setProject] = useState<any>(null);
   const [proposals, setProposals] = useState<any[]>([]);
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+
+  // Review State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewFeedback, setReviewFeedback] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -110,11 +118,36 @@ export function ClientProjectProposals() {
       if (error) throw error;
       alert('Funds released successfully!');
       await fetchData();
+      // Show review modal after funds are released
+      setShowReviewModal(true);
     } catch (err: any) {
       console.error('Error releasing funds:', err);
       alert(err.message || 'Failed to release funds.');
     } finally {
       setProcessing(null);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!contract || !contract.freelancer_id) return;
+    setReviewSubmitting(true);
+    try {
+      const { error } = await supabase.from('reviews').insert({
+        contract_id: contract.id,
+        project_id: project.id,
+        freelancer_id: contract.freelancer_id,
+        client_id: user?.id,
+        rating: reviewRating,
+        feedback: reviewFeedback
+      });
+      if (error) throw error;
+      setShowReviewModal(false);
+      alert('Review submitted successfully!');
+    } catch (err: any) {
+      console.error('Error submitting review:', err);
+      alert(err.message || 'Failed to submit review');
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -131,7 +164,45 @@ export function ClientProjectProposals() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-12">
+    <div className="max-w-5xl mx-auto pb-12 relative">
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-bold font-tenor">Leave a Review</h2>
+              <p className="text-sm text-text-secondary mt-1">Rate the freelancer's work on this project.</p>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className="bg-transparent border-none p-1 cursor-pointer transition-transform hover:scale-110"
+                  >
+                    <Star size={32} className={star <= reviewRating ? "text-warning fill-warning" : "text-border"} />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reviewFeedback}
+                onChange={(e) => setReviewFeedback(e.target.value)}
+                placeholder="Share your experience working with this freelancer..."
+                className="w-full p-4 border border-border rounded-lg outline-none focus:border-accent resize-none min-h-[120px]"
+              />
+            </div>
+            <div className="p-6 bg-surface border-t border-border flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowReviewModal(false)}>Skip for now</Button>
+              <Button variant="primary" onClick={handleSubmitReview} disabled={reviewSubmitting || !reviewFeedback.trim()}>
+                {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button 
         onClick={() => navigate('/client/dashboard')}
         className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-6 bg-transparent border-none cursor-pointer"
@@ -163,13 +234,30 @@ export function ClientProjectProposals() {
       )}
 
       {/* Release Funds Banner (If Active) */}
-      {contract && contract.status === 'active' && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-green-800">
+      {contract && contract.status === 'active' && !contract.work_submitted_at && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-blue-800">
             <ShieldCheck size={32} className="shrink-0" />
             <div>
               <h3 className="font-bold text-lg mb-1">Project is Active (Escrow Funded)</h3>
-              <p className="text-sm">Work is currently in progress. Once the freelancer delivers the work, you can approve and release the funds.</p>
+              <p className="text-sm">Work is currently in progress. Waiting for the freelancer to submit their deliverables.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {contract && contract.status === 'active' && contract.work_submitted_at && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-green-800">
+            <CheckCircle size={32} className="shrink-0" />
+            <div>
+              <h3 className="font-bold text-lg mb-1">Work Submitted for Approval</h3>
+              <p className="text-sm">The freelancer has submitted their work. Please review and release the funds.</p>
+              {contract.submission_notes && (
+                <div className="mt-3 p-3 bg-white/60 rounded border border-green-200 text-sm italic">
+                  "{contract.submission_notes}"
+                </div>
+              )}
             </div>
           </div>
           <Button 

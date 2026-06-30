@@ -69,6 +69,25 @@ serve(async (req) => {
           .update({ status: 'active' })
           .eq('id', contractId)
       }
+    } else if (event.type === 'identity.verification_session.verified') {
+      const session = event.data.object as Stripe.Identity.VerificationSession
+      const { user_id, role } = session.metadata || {}
+      
+      if (user_id && role) {
+        const table = role === 'client' ? 'client_profiles' : 'freelancer_profiles'
+        const { error: updateError } = await supabaseAdmin
+          .from(table)
+          .update({ 
+            identity_verified: true,
+            stripe_identity_id: session.id
+          })
+          .eq('id', user_id)
+          
+        if (updateError) {
+          console.error(`Error verifying ${role} identity:`, updateError)
+          throw updateError
+        }
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {

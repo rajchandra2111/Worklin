@@ -27,6 +27,9 @@ export function BrowseProjects() {
   const activeCategory = searchParams.get('category') || '';
   const activeBudgetType = searchParams.get('budgetType') || '';
   const activeSort = searchParams.get('sort') || 'newest';
+  const minBudget = searchParams.get('minBudget') || '';
+  const maxBudget = searchParams.get('maxBudget') || '';
+  const skillsFilter = searchParams.get('skills') || '';
 
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +58,7 @@ export function BrowseProjects() {
     if (user) {
       fetchSavedProjects();
     }
-  }, [searchQuery, activeCategory, activeBudgetType, activeSort, user]);
+  }, [searchQuery, activeCategory, activeBudgetType, activeSort, minBudget, maxBudget, skillsFilter, user]);
 
   const fetchSavedProjects = async () => {
     if (!user) return;
@@ -105,6 +108,22 @@ export function BrowseProjects() {
 
       if (activeBudgetType) {
         query = query.eq('budget_type', activeBudgetType);
+      }
+
+      if (minBudget) {
+        query = query.gte('budget', parseInt(minBudget));
+      }
+
+      if (maxBudget) {
+        query = query.lte('budget', parseInt(maxBudget));
+      }
+
+      if (skillsFilter) {
+        // Assume skills is a comma separated list
+        const skillsArray = skillsFilter.split(',').map(s => s.trim()).filter(Boolean);
+        if (skillsArray.length > 0) {
+          query = query.contains('skills', skillsArray);
+        }
       }
 
       const { data, error } = await query;
@@ -263,6 +282,47 @@ export function BrowseProjects() {
                   />
                   <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">Fixed Price</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Budget Range */}
+            <div className="pt-8 border-t border-border">
+              <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+                Budget Range ($)
+              </h3>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number" 
+                  placeholder="Min" 
+                  value={minBudget}
+                  onChange={(e) => updateFilter('minBudget', e.target.value)}
+                  className="w-full p-2 border border-border rounded text-sm outline-none focus:border-accent"
+                />
+                <span className="text-text-muted">-</span>
+                <input 
+                  type="number" 
+                  placeholder="Max" 
+                  value={maxBudget}
+                  onChange={(e) => updateFilter('maxBudget', e.target.value)}
+                  className="w-full p-2 border border-border rounded text-sm outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+
+            {/* Skills */}
+            <div className="pt-8 border-t border-border">
+              <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+                Required Skills
+              </h3>
+              <div className="mb-2">
+                <input 
+                  type="text" 
+                  placeholder="e.g. React, Node.js" 
+                  value={skillsFilter}
+                  onChange={(e) => updateFilter('skills', e.target.value)}
+                  className="w-full p-2 border border-border rounded text-sm outline-none focus:border-accent"
+                />
+                <p className="text-xs text-text-muted mt-1">Separate multiple skills with commas</p>
               </div>
             </div>
           </div>
