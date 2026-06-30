@@ -63,58 +63,75 @@ export function Messages() {
     }
   }, [user, initialProposalId]);
 
-  // Fetch messages and handle specific conversation typing/updates
+  // Global Realtime Subscription for all messages
   useEffect(() => {
-    if (!activeConversationId || !user) return;
+    if (!user) return;
     
-    const isContract = activeConversationId.startsWith('contract_');
-    const rawId = activeConversationId.replace('contract_', '').replace('proposal_', '');
-    const filterCol = isContract ? 'contract_id' : 'proposal_id';
-
-    fetchMessages(rawId, filterCol);
+    // We only need to fetch messages when the active conversation changes
+    if (activeConversationId) {
+      const isContract = activeConversationId.startsWith('contract_');
+      const rawId = activeConversationId.replace('contract_', '').replace('proposal_', '');
+      const filterCol = isContract ? 'contract_id' : 'proposal_id';
+      fetchMessages(rawId, filterCol);
+    }
 
     const channel = supabase
-      .channel(`messages:${activeConversationId}`)
+      .channel(`global-messages-${user.id}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'messages',
-          filter: `${filterCol}=eq.${rawId}`,
+          table: 'messages'
         },
         (payload) => {
-          setMessages((current) => {
-            // Deduplicate if we already have it
-            if (current.some(m => m.id === payload.new.id)) return current;
+          if (payload.eventType === 'INSERT') {
+            const newMsg = payload.new;
             
-            // Swap optimistic message if it exists
-            const optimisticMatch = current.find(m => m.sender_id === payload.new.sender_id && m.content === payload.new.content && m.id.toString().startsWith('temp_'));
-            if (optimisticMatch) {
-              return current.map(m => m.id === optimisticMatch.id ? payload.new : m);
+            // Check if this message belongs to the current active conversation
+            let belongsToActive = false;
+            if (activeConversationId) {
+              const isContract = activeConversationId.startsWith('contract_');
+              const rawId = activeConversationId.replace('contract_', '').replace('proposal_', '');
+              if (isContract && newMsg.contract_id === rawId) belongsToActive = true;
+              if (!isContract && newMsg.proposal_id === rawId) belongsToActive = true;
             }
-            
-            return [...current, payload.new];
-          });
-          if (payload.new.sender_id !== user.id) {
-            // If we are looking at this chat, we should mark it as read immediately
-            markAsRead(activeConversationId);
+
+            if (belongsToActive) {
+              setMessages((current) => {
+                if (current.some(m => m.id === newMsg.id)) return current;
+                const optimisticMatch = current.find(m => m.sender_id === newMsg.sender_id && m.content === newMsg.content && m.id.toString().startsWith('temp_'));
+                if (optimisticMatch) return current.map(m => m.id === optimisticMatch.id ? newMsg : m);
+                return [...current, newMsg];
+              });
+
+              if (newMsg.sender_id !== user.id && activeConversationId) {
+                markAsRead(activeConversationId);
+              }
+            } else {
+              // Update unread count for the other conversation
+              fetchUnreadCounts();
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            // Update read receipts
+            setMessages(current => current.map(m => m.id === payload.new.id ? payload.new : m));
+            fetchUnreadCounts(); // Refresh unread counts in case they changed
           }
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `${filterCol}=eq.${rawId}`,
-        },
-        (payload) => {
-          // Update read receipts in real-time
-          setMessages(current => current.map(m => m.id === payload.new.id ? payload.new : m));
-        }
-      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeConversationId, user]);
+
+  // Typing indicator subscription (specific to active conversation)
+  useEffect(() => {
+    if (!activeConversationId || !user) return;
+    
+    const channel = supabase
+      .channel(`typing:${activeConversationId}`)
       .on('broadcast', { event: 'typing' }, (payload) => {
         if (payload.payload.user_id !== user.id) {
           setTypingUserId(payload.payload.user_id);
@@ -128,7 +145,7 @@ export function Messages() {
       supabase.removeChannel(channel);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
-  }, [activeConversationId]);
+  }, [activeConversationId, user]);
 
   // Auto-scroll and auto-read when messages change
   useEffect(() => {
