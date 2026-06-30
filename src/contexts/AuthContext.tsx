@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   role: Role; // Verified DB role
   activeRole: Role; // What they are trying to be
+  onlineUsers: Set<string>; // Globally tracked online users
   isLoading: boolean;
   verifyRole: (userId: string, intendedRole: Role) => Promise<void>;
   signOut: () => Promise<void>;
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role>(null);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeRole, setActiveRole] = useState<Role>(() => {
@@ -51,6 +53,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Global Presence Tracking
+  useEffect(() => {
+    if (!user) {
+      setOnlineUsers(new Set());
+      return;
+    }
+
+    const presenceChannel = supabase.channel('global-online-users');
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const activeIds = new Set(Object.values(state).flatMap((p: any) => p.map((u: any) => u.user_id)) as string[]);
+        setOnlineUsers(activeIds);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ user_id: user.id });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [user]);
 
   const verifyRole = async (userId: string, intendedRole: Role) => {
     if (!intendedRole) {
@@ -92,7 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, activeRole, isLoading, verifyRole, signOut }}>
+    <AuthContext.Provider value={{
+        user,
+        role,
+        activeRole,
+        onlineUsers,
+        isLoading,
+        verifyRole,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
