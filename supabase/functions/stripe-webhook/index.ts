@@ -88,6 +88,45 @@ serve(async (req) => {
           throw updateError
         }
       }
+    } else if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const { userId, role, planTier } = subscription.metadata || {};
+
+      if (userId && role && planTier) {
+        // Upsert into subscriptions table
+        const { error: subError } = await supabaseAdmin
+          .from('subscriptions')
+          .upsert({
+            user_id: userId,
+            role: role,
+            plan_tier: planTier,
+            status: subscription.status,
+            billing_provider: 'stripe',
+            provider_customer_id: subscription.customer as string,
+            provider_subscription_id: subscription.id,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'provider_subscription_id' });
+
+        if (subError) {
+          console.error(`Error updating subscription for user ${userId}:`, subError);
+          throw subError;
+        }
+
+        // If freelancer gets pro/premium, they should get credits. (Future logic can go here for monthly credit drops)
+      }
+    } else if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const { userId } = subscription.metadata || {};
+
+      if (userId) {
+        await supabaseAdmin
+          .from('subscriptions')
+          .update({ status: 'canceled', plan_tier: 'basic' })
+          .eq('provider_subscription_id', subscription.id);
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {

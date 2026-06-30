@@ -3,6 +3,7 @@ import { Button } from '../components/ui/Button';
 import { Check, Zap, Shield, Star, Briefcase } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export function Pricing() {
   const { user, role } = useAuth();
@@ -111,13 +112,41 @@ export function Pricing() {
     ]
   };
 
-  const handleUpgrade = (planName: string) => {
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  const handleUpgrade = async (planName: string) => {
     if (!user) {
       navigate('/auth');
       return;
     }
-    // TODO: Integrate Stripe Checkout
-    alert(`Initiating Stripe checkout for ${planName} plan...`);
+    
+    setIsLoading(planName);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-subscription-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          planName: planName,
+          role: viewRole,
+          billingCycle: billingCycle
+        })
+      });
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+    } catch (error: any) {
+      console.error('Error initiating checkout:', error);
+      alert(`Error initiating checkout: ${error.message}`);
+    } finally {
+      setIsLoading(null);
+    }
   };
 
   const currentPlans = plans[viewRole];
@@ -210,8 +239,9 @@ export function Pricing() {
                 variant={plan.variant as 'primary' | 'secondary' | 'outline'}
                 className="w-full mb-8 h-12 text-[15px]"
                 onClick={() => handleUpgrade(plan.name)}
+                disabled={isLoading !== null}
               >
-                {plan.cta}
+                {isLoading === plan.name ? 'Redirecting...' : plan.cta}
               </Button>
 
               <div className="space-y-4 flex-1">

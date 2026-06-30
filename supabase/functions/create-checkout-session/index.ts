@@ -61,9 +61,47 @@ serve(async (req) => {
       throw new Error('Freelancer has not connected their bank account yet. Cannot fund escrow.')
     }
 
-    // Platform fee logic (10%)
-    const platformFee = contract.amount * 0.10
-    const netAmount = contract.amount - platformFee
+    // Fetch active subscriptions for both users
+    const { data: clientSub } = await supabase
+      .from('subscriptions')
+      .select('plan_tier')
+      .eq('user_id', user.id)
+      .eq('role', 'client')
+      .eq('status', 'active')
+      .maybeSingle()
+
+    const { data: freelancerSub } = await supabase
+      .from('subscriptions')
+      .select('plan_tier')
+      .eq('user_id', contract.freelancer_id)
+      .eq('role', 'freelancer')
+      .eq('status', 'active')
+      .maybeSingle()
+
+    const clientTier = clientSub?.plan_tier || 'basic'
+    const freelancerTier = freelancerSub?.plan_tier || 'basic'
+
+    // Determine Client Fee (added to total amount paid by client)
+    let clientFeeRate = 0.05 // Basic: 5%
+    if (clientTier === 'plus') clientFeeRate = 0.03 // Plus: 3%
+    if (clientTier === 'premium' || clientTier === 'enterprise') clientFeeRate = 0.00 // Premium: 0%
+
+    // Determine Freelancer Fee (deducted from amount before payout)
+    let freelancerFeeRate = 0.10 // Basic: 10%
+    if (freelancerTier === 'pro') freelancerFeeRate = 0.08 // Pro: 8%
+    if (freelancerTier === 'premium') freelancerFeeRate = 0.05 // Premium: 5%
+
+    const clientFeeAmount = contract.amount * clientFeeRate
+    const freelancerFeeAmount = contract.amount * freelancerFeeRate
+    
+    // Total charged to client = contract amount + client fee
+    const totalChargeAmount = contract.amount + clientFeeAmount
+    
+    // Total application fee taken by platform = client fee + freelancer fee
+    const totalPlatformFee = clientFeeAmount + freelancerFeeAmount
+    
+    // Net amount to freelancer = contract amount - freelancer fee
+    const netAmount = contract.amount - freelancerFeeAmount
 
     const origin = req.headers.get('origin') || 'http://localhost:5173'
 
@@ -76,7 +114,7 @@ serve(async (req) => {
             product_data: {
               name: `Project Escrow Deposit (Contract: ${contractId})`,
             },
-            unit_amount: Math.round(contract.amount * 100), // Stripe expects cents
+            unit_amount: Math.round(totalChargeAmount * 100), // Stripe expects cents
           },
           quantity: 1,
         },
@@ -84,7 +122,7 @@ serve(async (req) => {
       mode: 'payment',
       payment_intent_data: {
         capture_method: 'manual',
-        application_fee_amount: Math.round(platformFee * 100),
+        application_fee_amount: Math.round(totalPlatformFee * 100),
         transfer_data: {
           destination: stripeAccountId,
         },
