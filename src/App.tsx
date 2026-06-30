@@ -9,6 +9,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { ClientDashboard } from './pages/dashboard/ClientDashboard';
 import { ClientProjectProposals } from './pages/dashboard/ClientProjectProposals';
+import { ClientProjects } from './pages/dashboard/ClientProjects';
 import { FreelancerDashboard } from './pages/dashboard/FreelancerDashboard';
 import { Onboarding } from './pages/dashboard/Onboarding';
 import { PostProject } from './pages/dashboard/PostProject';
@@ -65,6 +66,7 @@ function App() {
           <Route path="/client" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="projects" element={<ClientProjects />} />
             <Route path="post-project" element={<PostProject />} />
             <Route path="project/:id/proposals" element={<ClientProjectProposals />} />
             <Route path="messages" element={<Messages />} />

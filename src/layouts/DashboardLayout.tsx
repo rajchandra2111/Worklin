@@ -27,11 +27,11 @@ export function DashboardLayout() {
   const fetchProfile = async () => {
     try {
       if (role === 'client') {
-        const { data } = await supabase.from('client_profiles').select('full_name, company_name, company_logo, first_name, username').eq('id', user?.id).single();
+        const { data } = await supabase.from('client_profiles').select('full_name, company_name, company_logo, avatar_url, first_name, username').eq('id', user?.id).single();
         if (data) {
           setProfile({
             name: data.company_name || data.full_name || data.first_name,
-            avatar: data.company_logo || '',
+            avatar: data.company_logo || data.avatar_url || '',
             id: user!.id,
             username: data.username
           });

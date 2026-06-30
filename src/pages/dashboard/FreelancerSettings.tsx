@@ -225,7 +225,13 @@ export function FreelancerSettings() {
           <div className="mb-6 flex items-center gap-6">
             <AvatarUpload 
               url={profile.avatar_url} 
-              onUpload={(url) => setProfile({...profile, avatar_url: url})} 
+              onUpload={async (url) => {
+                setProfile({...profile, avatar_url: url});
+                if (user) {
+                  await supabase.from('freelancer_profiles').update({ avatar_url: url }).eq('id', user.id);
+                  window.dispatchEvent(new Event('profileUpdated'));
+                }
+              }} 
               size={100}
             />
             <div className="text-sm text-text-secondary">
