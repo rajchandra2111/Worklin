@@ -23,6 +23,8 @@ import { FreelancerProfile } from './pages/profiles/FreelancerProfile';
 import { ClientProfile } from './pages/profiles/ClientProfile';
 import { Pricing } from './pages/Pricing';
 import { Billing } from './pages/dashboard/Billing';
+import { TermsOfService } from './pages/legal/TermsOfService';
+import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 
 import { Messages } from './pages/dashboard/Messages';
 import { AdminRoute } from './components/auth/AdminRoute';
@@ -57,6 +59,8 @@ function App() {
           <Route path="login" element={<LoginRedirect />} />
           <Route path="signup" element={<SignupRedirect />} />
           <Route path="pricing" element={<Pricing />} />
+          <Route path="terms" element={<TermsOfService />} />
+          <Route path="privacy" element={<PrivacyPolicy />} />
         </Route>
 
         <Route path="/onboarding" element={<Onboarding />} />

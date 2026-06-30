@@ -8,10 +8,13 @@ import {
 } from 'lucide-react';
 
 export function DashboardLayout() {
+  const CURRENT_TOS_VERSION = 'v1.0';
   const { user, role, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{name: string, avatar: string, id: string, username?: string} | null>(null);
+  const [profile, setProfile] = useState<{name: string, avatar: string, id: string, username?: string, tosVersion?: string} | null>(null);
+  const [showComplianceGate, setShowComplianceGate] = useState(false);
+  const [acceptingTos, setAcceptingTos] = useState(false);
 
   useEffect(() => {
     if (user && role) {
@@ -27,24 +30,32 @@ export function DashboardLayout() {
   const fetchProfile = async () => {
     try {
       if (role === 'client') {
-        const { data } = await supabase.from('client_profiles').select('full_name, company_name, company_logo, avatar_url, first_name, username').eq('id', user?.id).single();
+        const { data } = await supabase.from('client_profiles').select('full_name, company_name, company_logo, avatar_url, first_name, username, accepted_tos_version').eq('id', user?.id).single();
         if (data) {
           setProfile({
             name: data.company_name || data.full_name || data.first_name,
             avatar: data.company_logo || data.avatar_url || '',
             id: user!.id,
-            username: data.username
+            username: data.username,
+            tosVersion: data.accepted_tos_version
           });
+          if (data.accepted_tos_version !== CURRENT_TOS_VERSION) {
+            setShowComplianceGate(true);
+          }
         }
       } else if (role === 'freelancer') {
-        const { data } = await supabase.from('freelancer_profiles').select('full_name, avatar_url, first_name, username').eq('id', user?.id).single();
+        const { data } = await supabase.from('freelancer_profiles').select('full_name, avatar_url, first_name, username, accepted_tos_version').eq('id', user?.id).single();
         if (data) {
           setProfile({
             name: data.full_name || data.first_name,
             avatar: data.avatar_url || '',
             id: user!.id,
-            username: data.username
+            username: data.username,
+            tosVersion: data.accepted_tos_version
           });
+          if (data.accepted_tos_version !== CURRENT_TOS_VERSION) {
+            setShowComplianceGate(true);
+          }
         }
       }
     } catch (err) {
@@ -82,6 +93,27 @@ export function DashboardLayout() {
       navigate(`/${role}/profile/${profile.username}`);
     } else if (profile?.id) {
       navigate(`/${role}/profile/${profile.id}`);
+    }
+  };
+
+  const handleAcceptTos = async () => {
+    if (!user || !role) return;
+    setAcceptingTos(true);
+    try {
+      const table = role === 'client' ? 'client_profiles' : 'freelancer_profiles';
+      const { error } = await supabase
+        .from(table)
+        .update({ accepted_tos_version: CURRENT_TOS_VERSION })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      setShowComplianceGate(false);
+      setProfile(prev => prev ? { ...prev, tosVersion: CURRENT_TOS_VERSION } : null);
+    } catch (err) {
+      console.error('Error accepting TOS:', err);
+      alert('Failed to accept terms. Please try again.');
+    } finally {
+      setAcceptingTos(false);
     }
   };
 
@@ -156,6 +188,53 @@ export function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Compliance Gate Modal */}
+      {showComplianceGate && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-8 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-accent"></div>
+            <h2 className="text-2xl font-tenor font-bold text-text-primary mb-2">Updated Terms of Service</h2>
+            <p className="text-text-secondary mb-6 leading-relaxed">
+              We've updated our Terms of Service and Privacy Policy. To continue using Worklin, 
+              please review and accept the latest terms. This helps us ensure a secure and compliant environment for everyone.
+            </p>
+            
+            <div className="bg-surface p-4 rounded-lg border border-border mb-6">
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-center gap-2">
+                  <FileText size={16} className="text-accent" />
+                  <a href="/terms" target="_blank" className="text-text-primary hover:text-accent font-medium underline-offset-4 hover:underline">Read our Terms of Service</a>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FileText size={16} className="text-accent" />
+                  <a href="/privacy" target="_blank" className="text-text-primary hover:text-accent font-medium underline-offset-4 hover:underline">Read our Privacy Policy</a>
+                </li>
+              </ul>
+            </div>
+            
+            <p className="text-xs text-text-muted mb-8">
+              By clicking "I Accept", you acknowledge that you have read and agree to be bound by the updated Terms of Service and Privacy Policy.
+            </p>
+            
+            <div className="flex gap-4">
+              <button 
+                onClick={signOut}
+                className="flex-1 py-3 px-4 bg-white border border-border rounded-md text-text-secondary font-medium hover:bg-surface transition-colors cursor-pointer"
+              >
+                Log Out
+              </button>
+              <button 
+                onClick={handleAcceptTos}
+                disabled={acceptingTos}
+                className="flex-1 py-3 px-4 bg-primary text-white rounded-md font-medium hover:bg-accent transition-colors disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {acceptingTos ? 'Saving...' : 'I Accept'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

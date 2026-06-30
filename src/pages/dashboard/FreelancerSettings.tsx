@@ -29,7 +29,10 @@ export function FreelancerSettings() {
     experience: [],
     education: [],
     portfolio: [],
-    work_preferences: { size: [], engagement: [] }
+    work_preferences: { size: [], engagement: [] },
+    legal_entity_type: 'individual',
+    tax_id: '',
+    billing_address: { street: '', city: '', state: '', zip: '', country: '' }
   });
 
   const [skillInput, setSkillInput] = useState('');
@@ -58,7 +61,10 @@ export function FreelancerSettings() {
           education: data.education || [],
           portfolio: data.portfolio || [],
           work_preferences: data.work_preferences || { size: [], engagement: [] },
-          identity_verified: data.identity_verified || false
+          identity_verified: data.identity_verified || false,
+          legal_entity_type: data.legal_entity_type || 'individual',
+          tax_id: data.tax_id || '',
+          billing_address: data.billing_address || { street: '', city: '', state: '', zip: '', country: '' }
         });
       }
     } catch (err: any) {
@@ -70,6 +76,13 @@ export function FreelancerSettings() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfile({ 
+      ...profile, 
+      billing_address: { ...profile.billing_address, [e.target.name]: e.target.value } 
+    });
   };
 
   const handleArrayAdd = (e: React.KeyboardEvent, field: string, input: string, setInput: any) => {
@@ -156,7 +169,10 @@ export function FreelancerSettings() {
           experience: profile.experience,
           education: profile.education,
           portfolio: profile.portfolio,
-          work_preferences: profile.work_preferences
+          work_preferences: profile.work_preferences,
+          legal_entity_type: profile.legal_entity_type,
+          tax_id: profile.tax_id,
+          billing_address: profile.billing_address
         })
         .eq('id', user?.id);
         
@@ -428,6 +444,52 @@ export function FreelancerSettings() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Tax & Legal Info */}
+        <div className="bg-white p-6 md:p-8 rounded-xl border border-border shadow-sm">
+          <h2 className="text-lg font-semibold mb-5 pb-3 border-b border-border">Tax & Legal Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <div>
+              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Legal Entity Type</label>
+              <select name="legal_entity_type" value={profile.legal_entity_type} onChange={handleChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent bg-white">
+                <option value="company">Company / Business</option>
+                <option value="individual">Individual / Sole Trader</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Tax ID / VAT Number</label>
+              <input type="text" name="tax_id" placeholder="Optional" value={profile.tax_id} onChange={handleChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
+            </div>
+          </div>
+          
+          <h3 className="text-[14px] font-medium text-text-primary mb-3 mt-6">Billing Address</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Street Address</label>
+              <input type="text" name="street" value={profile.billing_address.street} onChange={handleAddressChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[13px] font-medium text-text-secondary mb-1.5">City</label>
+                <input type="text" name="city" value={profile.billing_address.city} onChange={handleAddressChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-text-secondary mb-1.5">State / Province</label>
+                <input type="text" name="state" value={profile.billing_address.state} onChange={handleAddressChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[13px] font-medium text-text-secondary mb-1.5">ZIP / Postal Code</label>
+                <input type="text" name="zip" value={profile.billing_address.zip} onChange={handleAddressChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-medium text-text-secondary mb-1.5">Country</label>
+                <input type="text" name="country" value={profile.billing_address.country} onChange={handleAddressChange} className="w-full p-[11px] px-3.5 border-[1.5px] border-border rounded-md font-inherit text-sm outline-none focus:border-accent" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Trust & Verification */}
