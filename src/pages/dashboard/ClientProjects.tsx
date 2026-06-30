@@ -202,7 +202,7 @@ export function ClientProjects() {
                 {/* Left Col: Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
-                    <Link to={`/project/${project.id}`} className="text-xl font-bold font-tenor text-text-primary hover:text-accent transition-colors truncate">
+                    <Link to={`/client/project/${project.id}`} className="text-xl font-bold font-tenor text-text-primary hover:text-accent transition-colors truncate">
                       {project.title}
                     </Link>
                     {activeTab === 'open' && (
@@ -248,7 +248,7 @@ export function ClientProjects() {
                 <div className="flex flex-row md:flex-col items-center md:items-end gap-3 shrink-0 border-t md:border-t-0 pt-4 md:pt-0 border-border">
                   {activeTab === 'open' && (
                     <>
-                      <Button onClick={() => navigate(`/client/project/${project.id}/proposals`)} className="w-full md:w-auto">
+                      <Button onClick={() => navigate(`/client/project/${project.id}`)} className="w-full md:w-auto">
                         <Users size={16} />
                         View Proposals
                       </Button>
@@ -257,7 +257,7 @@ export function ClientProjects() {
                   
                   {activeTab === 'in_progress' && (
                     <>
-                      <Button onClick={() => navigate(`/client/project/${project.id}/contracts`)} className="w-full md:w-auto">
+                      <Button onClick={() => navigate(`/client/project/${project.id}`)} className="w-full md:w-auto">
                         <Briefcase size={16} />
                         Manage Contracts
                       </Button>
@@ -272,7 +272,7 @@ export function ClientProjects() {
                       <div className="bg-green-50 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium mb-2 border border-green-200 w-full text-center md:text-left">
                         Project Completed
                       </div>
-                      <Button variant="outline" onClick={() => navigate(`/project/${project.id}`)} className="w-full md:w-auto">
+                      <Button variant="outline" onClick={() => navigate(`/client/project/${project.id}`)} className="w-full md:w-auto">
                         View Details
                       </Button>
                     </>
