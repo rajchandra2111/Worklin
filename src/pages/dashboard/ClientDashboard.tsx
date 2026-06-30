@@ -145,7 +145,13 @@ export function ClientDashboard() {
                         <span className="text-xs text-text-muted flex items-center gap-1.5">
                           <Clock size={14} /> Posted {new Date(project.created_at).toLocaleDateString()}
                         </span>
-                        <span className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span 
+                          className="text-sm font-medium text-accent flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/client/project/${project.id}?tab=proposals`);
+                          }}
+                        >
                           View Proposals <ArrowRight size={14} />
                         </span>
                       </div>

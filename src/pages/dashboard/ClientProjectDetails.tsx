@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { CheckCircle, ShieldCheck, Lock, ArrowLeft, Star, DollarSign, Clock, FileText } from 'lucide-react';
@@ -10,12 +10,15 @@ export function ClientProjectDetails() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') as 'overview' | 'proposals' | 'contract' || 'overview';
+  
   const [project, setProject] = useState<any>(null);
   const [proposals, setProposals] = useState<any[]>([]);
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'proposals' | 'contract'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'proposals' | 'contract'>(initialTab);
 
   // Review State
   const [showReviewModal, setShowReviewModal] = useState(false);
