@@ -28,7 +28,7 @@ export function ClientProfile() {
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('*')
-          .eq('client_id', clientData.id)
+          .eq('reviewee_id', clientData.id)
           .order('created_at', { ascending: false });
           
         if (reviewsData && reviewsData.length > 0) {

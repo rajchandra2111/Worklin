@@ -151,14 +151,12 @@ export function ClientProjectDetails() {
     setReviewSubmitting(true);
     try {
       const { error } = await supabase.from('reviews').insert([{
-        contract_id: contract.id,
         project_id: project.id,
         reviewer_id: user?.id,
-        freelancer_id: contract.freelancer_id,
-        client_id: user?.id,
+        reviewee_id: contract.freelancer_id,
+        role: 'client',
         rating: reviewRating,
-        feedback: reviewFeedback,
-        type: 'client_to_freelancer'
+        comment: reviewFeedback
       }]);
 
       if (error) throw error;

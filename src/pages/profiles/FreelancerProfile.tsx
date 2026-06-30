@@ -28,7 +28,7 @@ export function FreelancerProfile() {
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('*')
-          .eq('freelancer_id', freelancerData.id)
+          .eq('reviewee_id', freelancerData.id)
           .order('created_at', { ascending: false });
           
         if (reviewsData && reviewsData.length > 0) {

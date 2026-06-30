@@ -84,7 +84,18 @@ export function Messages() {
           filter: `${filterCol}=eq.${rawId}`,
         },
         (payload) => {
-          setMessages((current) => [...current, payload.new]);
+          setMessages((current) => {
+            // Deduplicate if we already have it
+            if (current.some(m => m.id === payload.new.id)) return current;
+            
+            // Swap optimistic message if it exists
+            const optimisticMatch = current.find(m => m.sender_id === payload.new.sender_id && m.content === payload.new.content && m.id.toString().startsWith('temp_'));
+            if (optimisticMatch) {
+              return current.map(m => m.id === optimisticMatch.id ? payload.new : m);
+            }
+            
+            return [...current, payload.new];
+          });
           if (payload.new.sender_id !== user.id) {
             // If we are looking at this chat, we should mark it as read immediately
             markAsRead(activeConversationId);
@@ -331,21 +342,29 @@ export function Messages() {
     const rawId = activeConversationId.replace('contract_', '').replace('proposal_', '');
 
     try {
+      const text = newMessage.trim();
+      setNewMessage(''); // Clear instantly
+      
+      const tempId = `temp_${Date.now()}`;
       const payload: any = {
         sender_id: user.id,
-        content: newMessage.trim(),
+        content: text,
       };
       if (isContract) payload.contract_id = rawId;
       else payload.proposal_id = rawId;
+
+      // Optimistic UI
+      setMessages(prev => [...prev, { ...payload, id: tempId, created_at: new Date().toISOString(), read_at: null }]);
 
       const { error } = await supabase.from('messages').insert(payload);
 
       if (error) {
         console.error("Supabase insert error:", error);
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(m => m.id !== tempId));
         alert(`Failed to send message: ${error.message}`);
         throw error;
       }
-      setNewMessage('');
     } catch (err: any) {
       console.error('Error sending message:', err);
       if (!err.message) alert('Failed to send message. Please check console.');
@@ -618,7 +637,7 @@ export function Messages() {
                   className="shrink-0 h-11 w-11 rounded-full p-0 flex items-center justify-center"
                   disabled={(!newMessage.trim() && !uploading) || uploading || isFreelancerPreHireEmpty}
                 >
-                  <Send size={18} className="ml-1" />
+                  <Send size={18} className="ml-1 -mt-0.5" />
                 </Button>
               </form>
             </div>
