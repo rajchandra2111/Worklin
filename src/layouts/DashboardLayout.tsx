@@ -17,6 +17,11 @@ export function DashboardLayout() {
     if (user && role) {
       fetchProfile();
     }
+    
+    const handleProfileUpdate = () => fetchProfile();
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate);
   }, [user, role]);
 
   const fetchProfile = async () => {
@@ -109,40 +114,43 @@ export function DashboardLayout() {
             );
           })}
         </nav>
-        
-        <div className="p-4 border-t border-border space-y-4">
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        {/* Top Header */}
+        <header className="h-[72px] border-b border-border bg-white px-6 flex items-center justify-end shrink-0 gap-2 sticky top-0 z-10">
           {profile && (
             <div 
               onClick={handleProfileClick}
-              className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-surface rounded-md transition-colors"
+              className="flex items-center gap-3 cursor-pointer hover:bg-surface py-1.5 px-3 rounded-md transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-sm font-semibold text-text-primary leading-tight">{profile.name}</span>
+                <span className="text-[11px] text-text-secondary">View Profile</span>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-accent text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
                 {profile.avatar ? (
                   <img src={profile.avatar.startsWith('http') ? profile.avatar : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar}`} alt={profile.name} className="w-full h-full object-cover" />
                 ) : (
                   profile.name?.[0] || 'U'
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-text-primary truncate">{profile.name}</div>
-                <div className="text-[11px] text-text-secondary truncate">View Public Profile</div>
-              </div>
             </div>
           )}
           
+          <div className="w-px h-6 bg-border mx-1 hidden sm:block"></div>
+          
           <button 
             onClick={signOut}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium text-text-secondary hover:bg-surface hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none outline-none"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:bg-surface hover:text-text-primary transition-colors cursor-pointer bg-transparent border-none outline-none"
+            title="Log out"
           >
             <LogOut size={18} />
-            Log out
           </button>
-        </div>
-      </aside>
+        </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 md:p-10 max-w-[1200px] mx-auto">
+        <div className="p-6 md:p-10 max-w-[1200px] mx-auto w-full">
           <Outlet />
         </div>
       </main>

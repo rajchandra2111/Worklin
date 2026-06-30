@@ -22,14 +22,26 @@ export function FreelancerProfile() {
         .from('freelancer_profiles')
         .select('*')
         .eq('username', profileUsername)
-        .single();
+        .maybeSingle();
 
       if (freelancerData) {
         const { data: reviewsData } = await supabase
           .from('reviews')
-          .select('*, client:client_profiles(full_name, company_name, avatar_url, company_logo)')
+          .select('*')
           .eq('freelancer_id', freelancerData.id)
           .order('created_at', { ascending: false });
+          
+        if (reviewsData && reviewsData.length > 0) {
+          const clientIds = [...new Set(reviewsData.map(r => r.client_id))];
+          const { data: clientsData } = await supabase
+            .from('client_profiles')
+            .select('id, full_name, company_name, avatar_url, company_logo')
+            .in('id', clientIds);
+            
+          reviewsData.forEach(r => {
+            r.client = clientsData?.find(c => c.id === r.client_id);
+          });
+        }
           
         setProfile({ ...freelancerData, reviews_list: reviewsData || [] });
       } else {

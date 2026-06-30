@@ -112,6 +112,7 @@ export function ClientSettings() {
         throw error;
       }
       setMessage({ text: 'Profile updated successfully!', type: 'success' });
+      window.dispatchEvent(new Event('profileUpdated'));
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
     } finally {

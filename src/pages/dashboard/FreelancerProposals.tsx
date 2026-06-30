@@ -22,21 +22,30 @@ export function FreelancerProposals() {
     try {
       const { data, error } = await supabase
         .from('proposals')
-        .select(`
-          *,
-          project:projects (
-            title,
-            status,
-            client:client_profiles (
-              full_name,
-              company_name
-            )
-          )
-        `)
+        .select('*')
         .eq('freelancer_id', user?.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const projectIds = [...new Set(data.map(p => p.project_id))];
+        const { data: projectsData } = await supabase.from('projects').select('id, title, status, client_id').in('id', projectIds);
+        
+        if (projectsData && projectsData.length > 0) {
+          const clientIds = [...new Set(projectsData.map(p => p.client_id))];
+          const { data: clientsData } = await supabase.from('client_profiles').select('id, full_name, company_name').in('id', clientIds);
+          
+          data.forEach(p => {
+            const proj = projectsData.find(pr => pr.id === p.project_id);
+            if (proj) {
+              const client = clientsData?.find(c => c.id === proj.client_id);
+              p.project = { ...proj, client };
+            }
+          });
+        }
+      }
+      
       setProposals(data || []);
     } catch (err) {
       console.error('Error fetching proposals:', err);
