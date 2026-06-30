@@ -134,7 +134,7 @@ serve(async (req) => {
         clientId: user.id,
         freelancerId: contract.freelancer_id,
         projectId: contract.project_id,
-        platformFee: platformFee.toString(),
+        platformFee: totalPlatformFee.toString(),
         netAmount: netAmount.toString()
       },
     })

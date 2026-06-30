@@ -120,12 +120,16 @@ export function ClientProjectDetails() {
     if (!contract) return;
     setProcessing('releasing');
     try {
-      const { error } = await supabase.rpc('release_escrow', { p_contract_id: contract.id });
+      const { data, error } = await supabase.functions.invoke('capture-payment', {
+        body: { contractId: contract.id }
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
       await fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error releasing payment:', err);
-      alert('Failed to release payment.');
+      alert(`Failed to release payment: ${err.message}`);
     } finally {
       setProcessing(null);
     }

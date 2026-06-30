@@ -66,7 +66,7 @@ export function Pricing({ inDashboard = false }: PricingProps) {
           'Consolidated bulk invoicing'
         ],
         icon: <Star className="w-6 h-6 text-amber-400" />,
-        cta: 'Contact Sales',
+        cta: 'Upgrade to Premium',
         variant: 'secondary'
       }
     ],
