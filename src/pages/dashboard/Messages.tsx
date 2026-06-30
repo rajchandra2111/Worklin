@@ -180,7 +180,6 @@ export function Messages() {
         .from('contracts')
         .select(`
           id, project_id, status, client_id, freelancer_id,
-          projects(title),
           client:client_profiles(full_name, company_name),
           freelancer:freelancer_profiles(full_name)
         `);
@@ -188,21 +187,35 @@ export function Messages() {
       else contractQuery.eq('freelancer_id', user?.id);
       const { data: contractData } = await contractQuery;
 
-      // 2. Fetch Proposals (with messages)
+      // 2. Fetch Projects to avoid PGRST201 join errors
+      let projectMap: Record<string, any> = {};
+      let myProjectIds: string[] = [];
+      if (role === 'client' && user) {
+        const { data: myProjects } = await supabase.from('projects').select('id, title, client_id').eq('client_id', user.id);
+        if (myProjects) {
+          myProjectIds = myProjects.map(p => p.id);
+          projectMap = Object.fromEntries(myProjects.map(p => [p.id, p]));
+        }
+      }
+
+      // 3. Fetch Proposals (with messages)
       const proposalQuery = supabase
         .from('proposals')
         .select(`
           id, project_id, status, freelancer_id,
-          projects (title, client_id),
           freelancer:freelancer_profiles(full_name),
           messages!inner(id)
         `);
-      if (role === 'client') proposalQuery.eq('projects.client_id', user?.id);
-      else proposalQuery.eq('freelancer_id', user?.id);
+      if (role === 'client') {
+        if (myProjectIds.length > 0) proposalQuery.in('project_id', myProjectIds);
+        else proposalQuery.eq('id', '00000000-0000-0000-0000-000000000000'); // Force empty if no projects
+      } else {
+        proposalQuery.eq('freelancer_id', user?.id);
+      }
       const { data: proposalData, error: propErr } = await proposalQuery;
       if (propErr) console.error("Proposal query error:", propErr);
 
-      // 3. Check for specific initial proposal (Client initiating chat)
+      // 4. Check for specific initial proposal (Client initiating chat)
       let initialProposal = null;
       if (initialProposalId && role === 'client') {
         const alreadyExists = proposalData?.some(p => p.id === initialProposalId);
@@ -211,7 +224,6 @@ export function Messages() {
             .from('proposals')
             .select(`
               id, project_id, status, freelancer_id,
-              projects (title, client_id),
               freelancer:freelancer_profiles(full_name)
             `)
             .eq('id', initialProposalId)
@@ -221,12 +233,26 @@ export function Messages() {
         }
       }
 
+      // 5. If freelancer, fetch project details for their proposals/contracts
+      if (role === 'freelancer') {
+         const allProjectIds = [
+           ...(contractData || []).map(c => c.project_id),
+           ...(proposalData || []).map(p => p.project_id)
+         ];
+         if (allProjectIds.length > 0) {
+            const { data: fProjects } = await supabase.from('projects').select('id, title, client_id').in('id', [...new Set(allProjectIds)]);
+            if (fProjects) {
+               projectMap = Object.fromEntries(fProjects.map(p => [p.id, p]));
+            }
+         }
+      }
+
       // Format all
       const formattedContracts: Conversation[] = (contractData || []).map((c: any) => ({
         id: `contract_${c.id}`,
         rawId: c.id,
         type: 'contract',
-        projectTitle: c.projects?.title || 'Unknown Project',
+        projectTitle: projectMap[c.project_id]?.title || 'Unknown Project',
         otherPartyName: role === 'client' ? c.freelancer?.full_name : (c.client?.company_name || c.client?.full_name || 'Client'),
         otherPartyId: role === 'client' ? c.freelancer_id : c.client_id,
         status: c.status,
@@ -237,9 +263,9 @@ export function Messages() {
         id: `proposal_${p.id}`,
         rawId: p.id,
         type: 'proposal',
-        projectTitle: p.projects?.title || 'Unknown Project',
+        projectTitle: projectMap[p.project_id]?.title || 'Unknown Project',
         otherPartyName: role === 'client' ? p.freelancer?.full_name : 'Client',
-        otherPartyId: role === 'client' ? p.freelancer_id : p.projects?.client_id,
+        otherPartyId: role === 'client' ? p.freelancer_id : projectMap[p.project_id]?.client_id,
         status: 'Pre-Hire',
         project_id: p.project_id
       }));
@@ -252,9 +278,9 @@ export function Messages() {
           id: `proposal_${initP.id}`,
           rawId: initP.id,
           type: 'proposal',
-          projectTitle: initP.projects?.title || 'Unknown Project',
+          projectTitle: projectMap[initP.project_id]?.title || 'Unknown Project',
           otherPartyName: initP.freelancer?.full_name || 'Freelancer',
-          otherPartyId: role === 'client' ? initP.freelancer_id : initP.projects?.client_id,
+          otherPartyId: role === 'client' ? initP.freelancer_id : projectMap[initP.project_id]?.client_id,
           status: 'Pre-Hire',
           project_id: initP.project_id
         });
