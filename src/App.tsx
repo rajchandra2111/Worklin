@@ -22,6 +22,7 @@ import { FreelancerContracts } from './pages/dashboard/FreelancerContracts';
 import { FreelancerProfile } from './pages/profiles/FreelancerProfile';
 import { ClientProfile } from './pages/profiles/ClientProfile';
 import { Pricing } from './pages/Pricing';
+import { Billing } from './pages/dashboard/Billing';
 
 import { Messages } from './pages/dashboard/Messages';
 import { AdminRoute } from './components/auth/AdminRoute';
@@ -72,6 +73,7 @@ function App() {
             <Route path="post-project" element={<PostProject />} />
             <Route path="project/:id" element={<ClientProjectDetails />} />
             <Route path="messages" element={<Messages />} />
+            <Route path="billing" element={<Billing />} />
             <Route path="settings" element={<ClientSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />
           </Route>
@@ -87,6 +89,7 @@ function App() {
             <Route path="messages" element={<Messages />} />
             <Route path="proposals" element={<FreelancerProposals />} />
             <Route path="contracts" element={<FreelancerContracts />} />
+            <Route path="billing" element={<Billing />} />
             <Route path="earnings" element={<FreelancerEarnings />} />
             <Route path="settings" element={<FreelancerSettings />} />
             <Route path="*" element={<div className="p-8">Page under construction</div>} />

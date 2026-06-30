@@ -57,7 +57,8 @@ export function DashboardLayout() {
     { name: 'Post Project', path: '/client/post-project', icon: FileText },
     { name: 'My Projects', path: '/client/projects', icon: FolderOpen },
     { name: 'Messages', path: '/client/messages', icon: MessageSquare },
-    { name: 'Payments', path: '/client/payments', icon: CreditCard },
+    { name: 'Payments', path: '/client/payments', icon: DollarSign },
+    { name: 'Billing', path: '/client/billing', icon: CreditCard },
     { name: 'Reviews', path: '/client/reviews', icon: Star },
     { name: 'Settings', path: '/client/settings', icon: Settings },
   ];
@@ -69,6 +70,7 @@ export function DashboardLayout() {
     { name: 'My Contracts', path: '/freelancer/contracts', icon: Briefcase },
     { name: 'Messages', path: '/freelancer/messages', icon: MessageSquare },
     { name: 'Earnings', path: '/freelancer/earnings', icon: DollarSign },
+    { name: 'Billing', path: '/freelancer/billing', icon: CreditCard },
     { name: 'Reviews', path: '/freelancer/reviews', icon: Star },
     { name: 'Settings', path: '/freelancer/settings', icon: Settings },
   ];
