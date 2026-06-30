@@ -21,6 +21,7 @@ import { FreelancerEarnings } from './pages/dashboard/FreelancerEarnings';
 import { FreelancerContracts } from './pages/dashboard/FreelancerContracts';
 import { FreelancerProfile } from './pages/profiles/FreelancerProfile';
 import { ClientProfile } from './pages/profiles/ClientProfile';
+import { Pricing } from './pages/Pricing';
 
 import { Messages } from './pages/dashboard/Messages';
 import { AdminRoute } from './components/auth/AdminRoute';
@@ -54,6 +55,7 @@ function App() {
           <Route path="browse" element={<BrowseProjects />} />
           <Route path="login" element={<LoginRedirect />} />
           <Route path="signup" element={<SignupRedirect />} />
+          <Route path="pricing" element={<Pricing />} />
         </Route>
 
         <Route path="/onboarding" element={<Onboarding />} />

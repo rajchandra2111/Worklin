@@ -26,6 +26,12 @@ export function Navbar() {
           >
             Browse Projects
           </Link>
+          <Link 
+            to="/pricing" 
+            className={`text-sm font-medium px-3 py-1.5 rounded-sm transition-colors ${location.pathname === '/pricing' ? 'text-text-primary bg-surface' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`}
+          >
+            Pricing
+          </Link>
         </div>
 
         <div className="flex gap-2">

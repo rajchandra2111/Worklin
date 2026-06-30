@@ -1,40 +1,81 @@
-Worklin\_ Development Roadmap
-Here is the exact step-by-step breakdown of every feature we still need to build to make the core transaction engine fully functional for both Clients and Freelancers.
+SaaS Monetization & Subscription Plan
+This document outlines the strategic, financial, and technical plan for introducing tiered SaaS subscriptions to the Worklin platform. Designed from the perspective of both a 20+ year technical architect and a marketplace finance expert, this model focuses on balancing marketplace liquidity (free users) with predictable MRR (subscriptions) and transaction volume (platform fees).
 
-We will focus on building the "Golden Path" first—the core loop from posting a project to getting paid.
+Open Questions
+IMPORTANT
 
-Phase 1: Bidding & Hiring (The Match)
-Currently, projects and freelancers exist, but they can't interact. We need to build the bidding engine.
+Do you agree with using lower platform fees as the primary incentive to upgrade? (e.g., Free users pay 10% fees, Premium pays 5%).
+Do we want to strictly lock the number of job posts/proposals for free users, or allow them to buy "credits" ad-hoc if they exceed the limit?
+For Stripe integration, do you prefer we use Stripe's hosted Customer Portal for subscription management (easiest, highly secure), or build a custom billing UI inside our dashboard?
 
-For Freelancers:
-Submit Proposal: On the Project Details page, freelancers need a form to submit a bid (Amount, Estimated Time, Cover Letter).
-Active Bids Dashboard: A section on the Freelancer Dashboard to track the status of their submitted proposals (Pending, Accepted, Rejected).
-For Clients:
-Review Proposals: Clients need a way to see all bids submitted for their specific projects.
-Hire Action: A button for the Client to "Accept" a proposal. This should change the project status from open to hired.
-Phase 2: Messaging & Collaboration
-Once a client accepts a freelancer's bid, they need to communicate.
+1. Freelancer Tiers & Pricing Strategy
+   The freelancer monetization strategy leverages "Pay-to-Win" mechanics (credits for premium DMs) combined with "ROI-driven" mechanics (lower fees). If a freelancer makes more than $800/mo on the platform, upgrading to Premium mathematically pays for itself.
 
-Real-time Chat: Create a private messaging interface between the Client and Freelancer tied to the specific contract.
-File Sharing: Allow both parties to upload and share requirement docs, design assets, and final deliverables in the chat.
-Phase 3: Escrow & Payments (The Core Engine)
-This is the most critical part of the platform. We need to handle money securely.
+🥉 Basic (Free)
+Apply to up to 15 projects/month.
+Standard profile visibility.
+Platform Fee: 10% on all payouts.
+No monthly credits included.
+🥈 Pro ($15 / month)
+Apply to 50 projects/month.
+50 Connects/Credits included monthly (can be used to bypass client restrictions and send Premium DMs).
+Profile Badge ("Pro Freelancer") to build trust.
+See competitor bid ranges (Min, Max, Avg) on projects.
+Platform Fee: 8% on payouts.
+🥇 Premium ($39 / month)
+Unlimited applications.
+150 Connects/Credits included monthly.
+Featured profile placement (appears higher in client search results).
+Custom portfolio URL & enhanced branding.
+Platform Fee: 5% on payouts (Highest ROI driver).
+Instant Payouts (bypasses the standard 3-day escrow holding period). 2. Client Tiers & Pricing Strategy
+Clients are monetized through workflow efficiency, talent quality, and team collaboration. High-volume hiring companies will upgrade to save on processing fees and manage teams.
 
-Fund Escrow (Client): Before work officially begins, the client must pay the agreed amount into a secure holding state (Stripe integration or simulated escrow for V1).
-Contract Status Tracking: The project status changes to in_progress.
-Submit for Review (Freelancer): A button for the freelancer to officially submit the final work.
-Approve & Release (Client): The client reviews the work. If approved, the system automatically triggers the payout to the freelancer's account (minus platform fees).
-Phase 4: Trust & Reputation
-Once the job is done, both parties need to review each other to build the platform's reputation system.
+🥉 Basic (Free)
+Post up to 3 projects/month.
+Invite up to 5 specific freelancers per project.
+Payment Fee: 5% processing fee on funded contracts.
+1 User Account (No team members).
+🥈 Plus ($29 / month)
+Post unlimited projects.
+Invite unlimited freelancers.
+Highlighted Job Posts (Marked as "Urgent" or "Featured" to attract top 1% talent).
+Advanced filtering (e.g., filter proposals by freelancer success rate or specific skill badges).
+Team Collaboration: Add up to 3 manager accounts.
+Payment Fee: 3% processing fee.
+🥇 Premium / Enterprise ($99 / month)
+Payment Fee: 0% platform fee (Only standard Stripe card processing fees apply).
+Unlimited team members & granular permission roles.
+Dedicated Account Manager / Talent matching specialist.
+NDA enforcement & custom contract templates.
+Consolidated bulk invoicing (pay all freelancers in one monthly invoice). 3. Financial Projections & Mechanics
+Why Freemium? Two-sided marketplaces die without liquidity. Free tiers ensure clients always have talent to choose from, and freelancers always have jobs to apply for.
+Why Monthly Credits? Giving Pro/Premium freelancers a monthly allowance of credits hooks them into the premium messaging system. Once they see the ROI of sending Premium Direct Messages, they are highly likely to buy more credits ad-hoc.
+Stripe Optimization: By pushing high-volume users to subscriptions, we offset Stripe's flat 30¢ transaction fee on micro-transactions, bundling value into a single monthly charge. 4. Proposed Technical Changes
+To implement this, we need to introduce subscription tracking alongside the escrow system we previously migrated.
 
-Leave a Review: A popup prompting both the Client and Freelancer to leave a 1-5 star rating and text review.
-Profile Updates: The system automatically calculates the new average rating and updates the numbers on the /hire and /browse public directories.
-Phase 5: Admin Panel (Oversight)
-You (the platform owner) need a way to manage everything without looking at the raw database.
+[NEW] Database Schema: subscriptions
+sql
 
-Admin Dashboard: A secure, hidden dashboard (e.g., /admin) only accessible to your email.
-Dispute Resolution: If a client is unhappy with the work, they can flag it as a "Dispute". You need a way to view the chat logs and manually release or refund the escrow funds.
-User Management: Ability to ban bad actors or delete inappropriate project posts.
-TIP
-
-What should we build next? I highly recommend we start with Phase 1: Bidding & Hiring. Do you want me to write the implementation plan to build the Proposal Submission system?
+CREATE TABLE subscriptions (
+id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+role TEXT CHECK (role IN ('client', 'freelancer')),
+stripe_customer_id TEXT,
+stripe_subscription_id TEXT,
+plan_tier TEXT NOT NULL DEFAULT 'basic', -- 'basic', 'pro', 'plus', 'premium'
+status TEXT NOT NULL DEFAULT 'active', -- 'active', 'past_due', 'canceled'
+current_period_end TIMESTAMP WITH TIME ZONE,
+created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+[MODIFY] Edge Functions (Stripe Webhooks)
+invoice.payment_succeeded: Updates current_period_end and status to 'active'.
+customer.subscription.updated / deleted: Updates plan tiers and handles downgrades.
+Monthly Credit Drop: When an invoice is paid for a freelancer, the webhook automatically adds 50 or 150 credits to their credits wallet.
+[MODIFY] Row Level Security (RLS) & Triggers
+Rate Limiting via Triggers: When a client inserts into projects, a Postgres trigger will count their active projects this month and block the insert if they are on basic and exceed 3 projects.
+Dynamic Fee Calculation: The payments table logic will dynamically calculate the platform_fee (10%, 8%, 5%, etc.) by checking the subscriptions.plan_tier of the users involved in the contract.
+Verification Plan
+Database: Deploy the new schema and mock user data for all 6 tiers (Client x3, Freelancer x3).
+Logic Check: Write a SQL test to simulate contract creation and verify that the platform_fee math adjusts dynamically based on the users' subscription tiers.
+UI Integration: Build the Pricing/Upgrade page in React (/pricing) and connect it to Stripe Checkout test links.
