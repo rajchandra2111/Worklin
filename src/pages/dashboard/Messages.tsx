@@ -25,6 +25,7 @@ export function Messages() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [hiring, setHiring] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations
@@ -248,6 +249,25 @@ export function Messages() {
     }
   };
 
+  const handleHireFreelancer = async () => {
+    if (!activeConv || activeConv.type !== 'proposal') return;
+    setHiring(true);
+    try {
+      // 1. Accept Proposal (creates contract)
+      const { error } = await supabase.rpc('accept_proposal', { p_proposal_id: activeConv.rawId });
+      if (error) throw error;
+
+      // Note: A SQL trigger is set up on the backend to migrate 
+      // the messages from proposal_id to the new contract_id seamlessly.
+      await fetchConversations();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to hire freelancer');
+    } finally {
+      setHiring(false);
+    }
+  };
+
   const activeConv = conversations.find(c => c.id === activeConversationId);
 
   // Freelancer pre-hire messaging restriction check
@@ -313,6 +333,15 @@ export function Messages() {
                   {activeConv.projectTitle}
                 </p>
               </div>
+              {role === 'client' && activeConv.type === 'proposal' && activeConv.status !== 'accepted' && (
+                <Button 
+                  onClick={handleHireFreelancer}
+                  disabled={hiring}
+                  className="bg-accent text-white hover:bg-accent-hover"
+                >
+                  {hiring ? 'Hiring...' : 'Hire Freelancer'}
+                </Button>
+              )}
             </div>
 
             {/* Messages Area */}
