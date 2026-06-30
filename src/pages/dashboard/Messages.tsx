@@ -193,28 +193,30 @@ export function Messages() {
         .from('proposals')
         .select(`
           id, project_id, status, freelancer_id,
-          projects!inner(title, client_id),
+          projects (title, client_id),
           freelancer:freelancer_profiles(full_name),
           messages!inner(id)
         `);
       if (role === 'client') proposalQuery.eq('projects.client_id', user?.id);
       else proposalQuery.eq('freelancer_id', user?.id);
-      const { data: proposalData } = await proposalQuery;
+      const { data: proposalData, error: propErr } = await proposalQuery;
+      if (propErr) console.error("Proposal query error:", propErr);
 
       // 3. Check for specific initial proposal (Client initiating chat)
       let initialProposal = null;
       if (initialProposalId && role === 'client') {
         const alreadyExists = proposalData?.some(p => p.id === initialProposalId);
         if (!alreadyExists) {
-          const { data: single } = await supabase
+          const { data: single, error: singleErr } = await supabase
             .from('proposals')
             .select(`
               id, project_id, status, freelancer_id,
-              projects!inner(title, client_id),
+              projects (title, client_id),
               freelancer:freelancer_profiles(full_name)
             `)
             .eq('id', initialProposalId)
             .single();
+          if (singleErr) console.error("Initial proposal fetch error:", singleErr);
           if (single) initialProposal = single;
         }
       }
@@ -312,10 +314,15 @@ export function Messages() {
 
       const { error } = await supabase.from('messages').insert(payload);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase insert error:", error);
+        alert(`Failed to send message: ${error.message}`);
+        throw error;
+      }
       setNewMessage('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sending message:', err);
+      if (!err.message) alert('Failed to send message. Please check console.');
     }
   };
 
