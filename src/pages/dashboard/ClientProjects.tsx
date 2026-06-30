@@ -66,7 +66,7 @@ export function ClientProjects() {
   };
 
   const openProjects = projects.filter(p => p.status === 'open');
-  const inProgressProjects = projects.filter(p => p.status === 'in_progress');
+  const inProgressProjects = projects.filter(p => p.status === 'in_progress' || p.status === 'hired');
   const completedProjects = projects.filter(p => p.status === 'completed');
   const cancelledProjects = projects.filter(p => p.status === 'cancelled');
 

@@ -205,11 +205,11 @@ export function ClientProjectDetails() {
           <div className="flex items-center gap-3">
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
               project.status === 'open' ? 'bg-green-50 text-green-700 border-green-200' :
-              project.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+              (project.status === 'in_progress' || project.status === 'hired') ? 'bg-blue-50 text-blue-700 border-blue-200' :
               project.status === 'completed' ? 'bg-purple-50 text-purple-700 border-purple-200' :
               'bg-red-50 text-red-700 border-red-200'
             }`}>
-              {project.status === 'in_progress' ? 'In Progress' : project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+              {project.status === 'in_progress' || project.status === 'hired' ? 'In Progress' : project.status.charAt(0).toUpperCase() + project.status.slice(1)}
             </span>
             <span className="text-text-secondary text-sm">
               Posted {new Date(project.created_at).toLocaleDateString()}

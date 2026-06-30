@@ -39,7 +39,7 @@ export function ClientDashboard() {
     }
   };
 
-  const activeProjectsCount = projects.filter(p => p.status === 'open' || p.status === 'hired').length;
+  const activeProjectsCount = projects.filter(p => p.status === 'open' || p.status === 'hired' || p.status === 'in_progress').length;
   // Calculate total pending proposals across all projects
   // Wait, Supabase returns proposals: [{ count: X }] when doing proposals(count).
   const pendingProposalsCount = projects.reduce((acc, project) => {
@@ -57,6 +57,7 @@ export function ClientDashboard() {
   const statusColors: Record<string, string> = {
     'open': 'bg-blue-50 text-blue-700 border-blue-200',
     'hired': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    'in_progress': 'bg-yellow-50 text-yellow-700 border-yellow-200',
     'completed': 'bg-green-50 text-green-700 border-green-200',
     'cancelled': 'bg-red-50 text-red-700 border-red-200',
   };
@@ -117,7 +118,7 @@ export function ClientDashboard() {
                     <div 
                       key={project.id} 
                       className="p-6 hover:bg-surface/50 transition-colors group cursor-pointer"
-                      onClick={() => navigate(`/client/project/${project.id}/proposals`)}
+                      onClick={() => navigate(`/client/project/${project.id}`)}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="font-semibold text-[16px] text-text-primary group-hover:text-accent transition-colors">
