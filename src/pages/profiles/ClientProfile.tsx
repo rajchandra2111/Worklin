@@ -76,7 +76,7 @@ export function ClientProfile() {
         <div className="max-w-[1000px] mx-auto px-6 py-10">
           <div className="flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
             <div className="w-24 h-24 rounded-xl bg-accent text-white flex items-center justify-center text-3xl font-bold shrink-0 shadow-sm overflow-hidden">
-              {c.company_logo ? <img src={c.company_logo.startsWith('http') ? c.company_logo : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${c.company_logo}`} alt={c.company_name || c.full_name} className="w-full h-full object-cover"/> : (c.company_name?.[0] || c.first_name[0])}
+              {(c.avatar_url || c.company_logo) ? <img src={(c.avatar_url || c.company_logo).startsWith('http') ? (c.avatar_url || c.company_logo) : `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/${c.avatar_url || c.company_logo}`} alt={c.company_name || c.full_name} className="w-full h-full object-cover"/> : (c.company_name?.[0] || c.first_name[0])}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1 justify-center md:justify-start">
