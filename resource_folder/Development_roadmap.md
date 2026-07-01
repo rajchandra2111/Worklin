@@ -79,3 +79,10 @@ Verification Plan
 Database: Deploy the new schema and mock user data for all 6 tiers (Client x3, Freelancer x3).
 Logic Check: Write a SQL test to simulate contract creation and verify that the platform_fee math adjusts dynamically based on the users' subscription tiers.
 UI Integration: Build the Pricing/Upgrade page in React (/pricing) and connect it to Stripe Checkout test links.
+
+scroll to top of the page for footer links
+/about
+/trust
+/blog
+/cookies
+lets create this page - as a experienced developer guide me with it
