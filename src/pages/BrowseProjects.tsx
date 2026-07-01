@@ -199,7 +199,7 @@ export function BrowseProjects() {
       {!user && (
         <div className="py-16 text-center max-w-[800px] mx-auto border-b border-border mb-12">
           <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">For Freelancers</p>
-          <h1 className="text-4xl md:text-5xl font-tenor font-normal uppercase tracking-[0.08em] leading-tight mb-5">
+          <h1 className="font-tenor text-4xl md:text-5xl font-bold text-text-primary mb-6 tracking-tight">
             Find rewarding projects and grow your career
           </h1>
           <p className="text-base text-text-secondary mb-8 max-w-[600px] mx-auto">
