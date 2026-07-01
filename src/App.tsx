@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Affiliates } from './pages/Affiliates';
+import { StaticPage } from './pages/StaticPage';
 import { Home } from './pages/Home';
 import { HireFreelancers } from './pages/HireFreelancers';
 import { BrowseProjects } from './pages/BrowseProjects';
@@ -61,6 +62,12 @@ function App() {
           <Route path="signup" element={<SignupRedirect />} />
           <Route path="pricing" element={<Pricing />} />
           <Route path="/affiliates" element={<Affiliates />} />
+          <Route path="how-to-hire" element={<StaticPage title="How to Hire" />} />
+          <Route path="success-stories" element={<StaticPage title="Success Stories" />} />
+          <Route path="about" element={<StaticPage title="About Us" />} />
+          <Route path="trust" element={<StaticPage title="Trust & Safety" />} />
+          <Route path="blog" element={<StaticPage title="Blog" />} />
+          <Route path="cookies" element={<StaticPage title="Cookie Policy" />} />
           <Route path="terms" element={<TermsOfService />} />
           <Route path="privacy" element={<PrivacyPolicy />} />
         </Route>

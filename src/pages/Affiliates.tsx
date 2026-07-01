@@ -75,7 +75,7 @@ export function Affiliates() {
               Create an account today and we'll notify you the moment the affiliate program goes live.
             </p>
             <Link to="/">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+              <Button size="lg" className="bg-white text-text-primary hover:bg-white/90 hover:text-black">
                 Go to Homepage
               </Button>
             </Link>
