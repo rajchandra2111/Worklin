@@ -11,6 +11,7 @@ export function Billing() {
   const [subscription, setSubscription] = useState<any>(null);
   const [billingHistory, setBillingHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usageCount, setUsageCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -37,6 +38,30 @@ export function Billing() {
           
         if (historyError) throw historyError;
         setBillingHistory(historyData || []);
+
+        // Calculate Usage Count for current month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        if (role === 'client') {
+          const { count, error: countError } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('client_id', user.id)
+            .gte('created_at', startOfMonth.toISOString());
+            
+          if (!countError && count !== null) setUsageCount(count);
+        } else if (role === 'freelancer') {
+          const { count, error: countError } = await supabase
+            .from('proposals')
+            .select('*', { count: 'exact', head: true })
+            .eq('freelancer_id', user.id)
+            .gte('created_at', startOfMonth.toISOString());
+            
+          if (!countError && count !== null) setUsageCount(count);
+        }
+
       } catch (err) {
         console.error('Error fetching billing data:', err);
       } finally {
@@ -45,7 +70,7 @@ export function Billing() {
     };
 
     fetchBillingData();
-  }, [user]);
+  }, [user, role]);
 
   const handleManageStripe = () => {
     // In the future, this will call a Supabase Edge function that creates a Stripe Customer Portal session.
@@ -97,22 +122,58 @@ export function Billing() {
           </div>
         </div>
 
-        {/* Usage / Limits (mockup logic) */}
+        {/* Usage / Limits */}
         <div className="p-6 bg-surface/50">
           <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-4">Monthly Usage Limits</h3>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-text-secondary">
-                  {role === 'client' ? 'Active Projects' : 'Proposals Submitted'}
+                  {role === 'client' ? 'Projects Posted This Month' : 'Proposals Submitted This Month'}
                 </span>
                 <span className="font-medium text-text-primary">
-                  1 / {subscription?.plan_tier === 'premium' ? 'Unlimited' : (role === 'client' ? '3' : '15')}
+                  {(() => {
+                    const planTier = subscription?.plan_tier || 'basic';
+                    let limit = 0;
+                    if (role === 'client') {
+                      limit = planTier === 'enterprise' || planTier === 'premium' ? -1 : (planTier === 'plus' ? -1 : 3);
+                    } else {
+                      limit = planTier === 'premium' || planTier === 'enterprise' ? -1 : (planTier === 'pro' ? 50 : 15);
+                    }
+                    
+                    if (limit === -1) {
+                      return `${usageCount} / Unlimited`;
+                    }
+                    
+                    return (
+                      <>{usageCount} / {limit}</>
+                    );
+                  })()}
                 </span>
               </div>
-              <div className="w-full bg-border rounded-full h-2">
-                <div className="bg-accent h-2 rounded-full" style={{ width: '33%' }}></div>
-              </div>
+              
+              {(() => {
+                const planTier = subscription?.plan_tier || 'basic';
+                let limit = 0;
+                if (role === 'client') {
+                  limit = planTier === 'enterprise' || planTier === 'premium' ? -1 : (planTier === 'plus' ? -1 : 3); // Plus has unlimited projects! Basic has 3.
+                } else {
+                  limit = planTier === 'premium' || planTier === 'enterprise' ? -1 : (planTier === 'pro' ? 50 : 15);
+                }
+                
+                if (limit === -1) return null; // No progress bar for unlimited
+                
+                const percentage = Math.min(100, Math.round((usageCount / limit) * 100));
+                
+                return (
+                  <div className="w-full bg-border rounded-full h-2 mt-2">
+                    <div 
+                      className={`h-2 rounded-full ${percentage >= 100 ? 'bg-red-500' : percentage >= 80 ? 'bg-amber-500' : 'bg-accent'}`} 
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
