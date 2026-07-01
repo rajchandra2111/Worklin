@@ -39,17 +39,21 @@ export function Billing() {
         if (historyError) throw historyError;
         setBillingHistory(historyData || []);
 
-        // Calculate Usage Count for current month
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+        // Calculate Usage Count based on active plan's billing cycle, or fallback to start of month
+        let periodStart = new Date();
+        periodStart.setDate(1);
+        periodStart.setHours(0, 0, 0, 0);
+        
+        if (subData?.current_period_start) {
+          periodStart = new Date(subData.current_period_start);
+        }
 
         if (role === 'client') {
           const { count, error: countError } = await supabase
             .from('projects')
             .select('*', { count: 'exact', head: true })
             .eq('client_id', user.id)
-            .gte('created_at', startOfMonth.toISOString());
+            .gte('created_at', periodStart.toISOString());
             
           if (!countError && count !== null) setUsageCount(count);
         } else if (role === 'freelancer') {
@@ -57,7 +61,7 @@ export function Billing() {
             .from('proposals')
             .select('*', { count: 'exact', head: true })
             .eq('freelancer_id', user.id)
-            .gte('created_at', startOfMonth.toISOString());
+            .gte('created_at', periodStart.toISOString());
             
           if (!countError && count !== null) setUsageCount(count);
         }
@@ -129,7 +133,7 @@ export function Billing() {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-text-secondary">
-                  {role === 'client' ? 'Projects Posted This Month' : 'Proposals Submitted This Month'}
+                  {role === 'client' ? 'Projects Posted This Cycle' : 'Proposals Submitted This Cycle'}
                 </span>
                 <span className="font-medium text-text-primary">
                   {(() => {
