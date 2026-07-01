@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
+import { Affiliates } from './pages/Affiliates';
 import { Home } from './pages/Home';
 import { HireFreelancers } from './pages/HireFreelancers';
 import { BrowseProjects } from './pages/BrowseProjects';
@@ -59,6 +60,7 @@ function App() {
           <Route path="login" element={<LoginRedirect />} />
           <Route path="signup" element={<SignupRedirect />} />
           <Route path="pricing" element={<Pricing />} />
+          <Route path="/affiliates" element={<Affiliates />} />
           <Route path="terms" element={<TermsOfService />} />
           <Route path="privacy" element={<PrivacyPolicy />} />
         </Route>
