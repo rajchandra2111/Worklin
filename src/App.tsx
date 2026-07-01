@@ -4,6 +4,7 @@ import { Affiliates } from './pages/Affiliates';
 import { StaticPage } from './pages/StaticPage';
 import { HowToHire } from './pages/HowToHire';
 import { SuccessStories } from './pages/SuccessStories';
+import { About } from './pages/About';
 import { ScrollToTop } from './components/ui/ScrollToTop';
 import { Home } from './pages/Home';
 import { HireFreelancers } from './pages/HireFreelancers';
@@ -68,7 +69,7 @@ function App() {
           <Route path="/affiliates" element={<Affiliates />} />
           <Route path="how-to-hire" element={<HowToHire />} />
           <Route path="success-stories" element={<SuccessStories />} />
-          <Route path="about" element={<StaticPage title="About Us" />} />
+          <Route path="about" element={<About />} />
           <Route path="trust" element={<StaticPage title="Trust & Safety" />} />
           <Route path="blog" element={<StaticPage title="Blog" />} />
           <Route path="cookies" element={<StaticPage title="Cookie Policy" />} />
