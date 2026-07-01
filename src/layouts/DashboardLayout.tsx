@@ -65,6 +65,7 @@ export function DashboardLayout() {
 
   const clientLinks = [
     { name: 'Dashboard', path: '/client/dashboard', icon: LayoutDashboard },
+    { name: 'Hire Freelancers', path: '/client/hire', icon: Search },
     { name: 'Post Project', path: '/client/post-project', icon: FileText },
     { name: 'My Projects', path: '/client/projects', icon: FolderOpen },
     { name: 'Messages', path: '/client/messages', icon: MessageSquare },

@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button';
 import { useUiStore } from '../store/uiStore';
 import { VerifiedBadge } from '../components/ui/VerifiedBadge';
 
-export function HireFreelancers() {
+export function HireFreelancers({ inDashboard = false }: { inDashboard?: boolean }) {
   const navigate = useNavigate();
   const { openAuthModal } = useUiStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -89,20 +89,22 @@ export function HireFreelancers() {
     <div className="pb-12 max-w-5xl mx-auto px-6">
       
       {/* Hero Section */}
-      <div className="py-16 text-center max-w-[800px] mx-auto border-b border-border mb-12">
-        <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">For Clients</p>
-        <h1 className="font-tenor text-4xl md:text-5xl font-bold text-text-primary mb-6 tracking-tight">
-          Find the perfect freelance services for your business
-        </h1>
-        <p className="text-base text-text-secondary mb-8 max-w-[600px] mx-auto">
-          Get your projects done by vetted experts on a secure, escrow-backed platform.
-        </p>
-        <Button size="lg" variant="primary" onClick={() => openAuthModal('signup', 'client')}>
-          Post a project — it's free
-        </Button>
-      </div>
+      {!inDashboard && (
+        <div className="py-16 text-center max-w-[800px] mx-auto border-b border-border mb-12">
+          <p className="text-xs font-semibold tracking-widest uppercase text-accent mb-2.5">For Clients</p>
+          <h1 className="font-tenor text-4xl md:text-5xl font-bold text-text-primary mb-6 tracking-tight">
+            Find the perfect freelance services for your business
+          </h1>
+          <p className="text-base text-text-secondary mb-8 max-w-[600px] mx-auto">
+            Get your projects done by vetted experts on a secure, escrow-backed platform.
+          </p>
+          <Button size="lg" variant="primary" onClick={() => openAuthModal('signup', 'client')}>
+            Post a project — it's free
+          </Button>
+        </div>
+      )}
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className={`flex flex-col lg:flex-row gap-8 ${inDashboard ? 'pt-6' : ''}`}>
         
         {/* Left Sidebar Filters */}
         <div className="lg:w-[280px] shrink-0">

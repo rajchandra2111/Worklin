@@ -82,6 +82,7 @@ function App() {
           <Route path="/client" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="hire" element={<HireFreelancers inDashboard={true} />} />
             <Route path="projects" element={<ClientProjects />} />
             <Route path="post-project" element={<PostProject />} />
             <Route path="project/:id" element={<ClientProjectDetails />} />
