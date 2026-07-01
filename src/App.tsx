@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { Affiliates } from './pages/Affiliates';
-import { StaticPage } from './pages/StaticPage';
 import { HowToHire } from './pages/HowToHire';
 import { SuccessStories } from './pages/SuccessStories';
 import { About } from './pages/About';
 import { Trust } from './pages/Trust';
 import { Blog } from './pages/Blog';
 import { BlogPostDetails } from './pages/BlogPostDetails';
+import { CookiePolicy } from './pages/CookiePolicy';
 import { ScrollToTop } from './components/ui/ScrollToTop';
 import { Home } from './pages/Home';
 import { HireFreelancers } from './pages/HireFreelancers';
@@ -76,7 +76,7 @@ function App() {
           <Route path="trust" element={<Trust />} />
           <Route path="blog" element={<Blog />} />
           <Route path="blog/:slug" element={<BlogPostDetails />} />
-          <Route path="cookies" element={<StaticPage title="Cookie Policy" />} />
+          <Route path="cookies" element={<CookiePolicy />} />
           <Route path="terms" element={<TermsOfService />} />
           <Route path="privacy" element={<PrivacyPolicy />} />
         </Route>
