@@ -28,6 +28,7 @@ import { FreelancerEarnings } from './pages/dashboard/FreelancerEarnings';
 import { FreelancerContracts } from './pages/dashboard/FreelancerContracts';
 import { FreelancerProfile } from './pages/profiles/FreelancerProfile';
 import { ClientProfile } from './pages/profiles/ClientProfile';
+import { PayPalCheckout } from './pages/PayPalCheckout';
 import { Pricing } from './pages/Pricing';
 import { Billing } from './pages/dashboard/Billing';
 import { TermsOfService } from './pages/legal/TermsOfService';
@@ -78,6 +79,7 @@ function App() {
         </Route>
 
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/checkout" element={<PayPalCheckout />} />
 
         {/* Public Profile Routes */}
         <Route path="/freelancer/profile/:username" element={<FreelancerProfile />} />

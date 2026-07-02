@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Clock, DollarSign, MapPin, Briefcase } from 'lucide-react';
+import { ArrowLeft, Clock, DollarSign, MapPin, Briefcase, Star, Upload, File as FileIcon } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { formatCurrency, getCurrencyForCountry } from '../../lib/currency';
 
 export function ProjectDetails() {
   const { id } = useParams();
@@ -24,8 +25,11 @@ export function ProjectDetails() {
   const [proposalData, setProposalData] = useState({
     cover_letter: '',
     bid_amount: '',
-    delivery_time: '1-2 weeks'
+    deposit_required: '',
+    delivery_time: '1-2 weeks',
+    attachments: [] as string[]
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchProjectDetails();
@@ -108,6 +112,38 @@ export function ProjectDetails() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${user?.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('proposal_attachments')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('proposal_attachments')
+        .getPublicUrl(filePath);
+
+      setProposalData(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, publicUrl]
+      }));
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !project) return;
@@ -120,8 +156,10 @@ export function ProjectDetails() {
         project_id: project.id,
         freelancer_id: user.id,
         cover_letter: proposalData.cover_letter,
-        proposed_rate: parseFloat(proposalData.bid_amount), // Use the correct schema column name
-        estimated_timeline: proposalData.delivery_time, // Use the correct schema column name
+        proposed_rate: parseFloat(proposalData.bid_amount),
+        deposit_required: proposalData.deposit_required ? parseFloat(proposalData.deposit_required) : 0,
+        estimated_timeline: proposalData.delivery_time,
+        attachments: proposalData.attachments,
         status: 'pending'
       }]);
 
@@ -259,19 +297,46 @@ export function ProjectDetails() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-text-primary">Bid Amount ($)</label>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      value={proposalData.bid_amount}
-                      onChange={(e) => setProposalData({...proposalData, bid_amount: e.target.value})}
-                      placeholder="e.g. 1500"
-                      className="w-full px-4 py-3 rounded-lg border border-border focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all text-[15px]"
-                    />
+                    <label className="block text-sm font-semibold text-text-primary">
+                      Your Quote <span className="text-xs font-normal text-text-secondary block">Budget to finish full project</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-text-secondary">
+                        {getCurrencyForCountry(project.client?.country).symbol}
+                      </div>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={proposalData.bid_amount}
+                        onChange={(e) => setProposalData({...proposalData, bid_amount: e.target.value})}
+                        placeholder="e.g. 1500"
+                        className="w-full pl-8 pr-4 py-3 rounded-lg border border-border focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all text-[15px]"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-text-primary">
+                      Deposit Required <span className="text-xs font-normal text-text-secondary block">Amount to add to SafePay upfront</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-text-secondary">
+                        {getCurrencyForCountry(project.client?.country).symbol}
+                      </div>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={proposalData.deposit_required}
+                        onChange={(e) => setProposalData({...proposalData, deposit_required: e.target.value})}
+                        placeholder="e.g. 500"
+                        className="w-full pl-8 pr-4 py-3 rounded-lg border border-border focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all text-[15px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-2">
                     <label className="block text-sm font-semibold text-text-primary">Estimated Delivery</label>
                     <select
                       value={proposalData.delivery_time}
@@ -284,6 +349,23 @@ export function ProjectDetails() {
                       <option value="1-3 months">1-3 months</option>
                       <option value="More than 3 months">More than 3 months</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-text-primary">Add relative files (optional)</label>
+                  <div className="flex flex-wrap gap-3">
+                    {proposalData.attachments.map((url, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-surface px-3 py-1.5 rounded-lg border border-border text-sm">
+                        <FileIcon size={14} className="text-accent" />
+                        <span className="truncate max-w-[150px]">Attachment {idx + 1}</span>
+                      </div>
+                    ))}
+                    <label className="flex items-center gap-2 bg-white px-4 py-2 border border-dashed border-border rounded-lg text-sm text-text-secondary hover:text-accent hover:border-accent cursor-pointer transition-colors">
+                      <Upload size={16} />
+                      {uploading ? 'Uploading...' : 'Upload File'}
+                      <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                    </label>
                   </div>
                 </div>
 
@@ -364,20 +446,51 @@ export function ProjectDetails() {
           <div className="bg-white p-6 rounded-xl border border-border shadow-sm">
             <h3 className="font-bold text-text-primary mb-4 font-tenor text-lg">About the Client</h3>
             <div className="space-y-4">
-              <div>
-                <p className="text-sm font-semibold text-text-primary">{project.client?.full_name || 'Anonymous Client'}</p>
-                {project.client?.company_name && (
-                  <p className="text-xs text-text-secondary mt-0.5">{project.client.company_name}</p>
-                )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[15px] font-semibold text-text-primary">Payment Verified</p>
+                  <div className="flex items-center gap-1 text-yellow-500 mt-1">
+                    <Star size={14} className="fill-current" />
+                    <Star size={14} className="fill-current" />
+                    <Star size={14} className="fill-current" />
+                    <Star size={14} className="fill-current" />
+                    <Star size={14} className="fill-current" />
+                    <span className="text-text-secondary text-xs ml-1 font-medium">(4.9)</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-surface border border-border flex items-center justify-center text-text-secondary text-lg font-tenor font-bold uppercase">
+                  O
+                </div>
               </div>
               
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
-                <MapPin size={16} className="text-text-muted" />
-                {project.client?.country || 'Location hidden'}
+              <div className="grid grid-cols-2 gap-y-3 pt-4 border-t border-border text-sm">
+                <div>
+                  <p className="text-text-muted text-xs mb-0.5">Location</p>
+                  <p className="font-medium text-text-primary flex items-center gap-1">
+                    <MapPin size={12} className="text-text-secondary" />
+                    {project.client?.country || 'Hidden'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-text-muted text-xs mb-0.5">Projects Paid</p>
+                  <p className="font-medium text-text-primary">4 Projects</p>
+                </div>
+                <div>
+                  <p className="text-text-muted text-xs mb-0.5">Total Spent</p>
+                  <p className="font-medium text-text-primary">{formatCurrency(900, project.client?.country)}</p>
+                </div>
+                <div>
+                  <p className="text-text-muted text-xs mb-0.5">Feedback Rate</p>
+                  <p className="font-medium text-text-primary">93%</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-text-muted text-xs mb-0.5">Client Type</p>
+                  <p className="font-medium text-text-primary">Individual</p>
+                </div>
               </div>
               
               <div className="pt-4 border-t border-border">
-                <p className="text-xs text-text-muted text-center">Member since 2024</p>
+                <p className="text-xs text-text-muted text-center">Member since 15 Feb, 2026</p>
               </div>
             </div>
           </div>

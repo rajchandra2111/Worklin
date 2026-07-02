@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Send, Paperclip, FileText, CheckCircle, Clock, Check, CheckCheck } from 'lucide-react';
+import { Send, Paperclip, FileText, CheckCircle, Clock, Check, CheckCheck, Upload } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 type Conversation = {
@@ -14,11 +14,13 @@ type Conversation = {
   otherPartyId: string;
   status: string;
   project_id: string;
+  contractData?: any;
+  proposalData?: any;
 };
-
 export function Messages() {
   const { user, role } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialProposalId = searchParams.get('proposal');
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -26,7 +28,12 @@ export function Messages() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [hiring, setHiring] = useState(false);
+  
+  // Modals state
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [deliveryFile, setDeliveryFile] = useState<File | null>(null);
+  const [deliveryUploading, setDeliveryUploading] = useState(false);
   
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUserId, setTypingUserId] = useState<string | null>(null);
@@ -208,6 +215,7 @@ export function Messages() {
         .from('contracts')
         .select(`
           id, project_id, status, client_id, freelancer_id,
+          amount, total_amount, escrow_amount, escrow_funded, work_submitted_at, submission_notes, remaining_balance_paid,
           client:client_profiles(full_name, company_name),
           freelancer:freelancer_profiles(full_name)
         `);
@@ -230,7 +238,7 @@ export function Messages() {
       const proposalQuery = supabase
         .from('proposals')
         .select(`
-          id, project_id, status, freelancer_id,
+          id, project_id, status, freelancer_id, proposed_rate, deposit_required,
           freelancer:freelancer_profiles(full_name),
           messages!inner(id)
         `);
@@ -251,7 +259,7 @@ export function Messages() {
           const { data: single, error: singleErr } = await supabase
             .from('proposals')
             .select(`
-              id, project_id, status, freelancer_id,
+              id, project_id, status, freelancer_id, proposed_rate, deposit_required,
               freelancer:freelancer_profiles(full_name)
             `)
             .eq('id', initialProposalId)
@@ -284,7 +292,8 @@ export function Messages() {
         otherPartyName: role === 'client' ? c.freelancer?.full_name : (c.client?.company_name || c.client?.full_name || 'Client'),
         otherPartyId: role === 'client' ? c.freelancer_id : c.client_id,
         status: c.status,
-        project_id: c.project_id
+        project_id: c.project_id,
+        contractData: c
       }));
 
       const formattedProposals: Conversation[] = (proposalData || []).map((p: any) => ({
@@ -295,7 +304,8 @@ export function Messages() {
         otherPartyName: role === 'client' ? p.freelancer?.full_name : 'Client',
         otherPartyId: role === 'client' ? p.freelancer_id : projectMap[p.project_id]?.client_id,
         status: 'Pre-Hire',
-        project_id: p.project_id
+        project_id: p.project_id,
+        proposalData: p
       }));
 
       const all = [...formattedContracts, ...formattedProposals];
@@ -310,7 +320,8 @@ export function Messages() {
           otherPartyName: initP.freelancer?.full_name || 'Freelancer',
           otherPartyId: role === 'client' ? initP.freelancer_id : projectMap[initP.project_id]?.client_id,
           status: 'Pre-Hire',
-          project_id: initP.project_id
+          project_id: initP.project_id,
+          proposalData: initP
         });
       }
 
@@ -433,18 +444,108 @@ export function Messages() {
 
   const handleHireFreelancer = async () => {
     if (!activeConv || activeConv.type !== 'proposal') return;
-    setHiring(true);
-    try {
-      const { error } = await supabase.rpc('accept_proposal', { p_proposal_id: activeConv.rawId });
-      if (error) throw error;
+    navigate(`/checkout?proposal_id=${activeConv.rawId}&type=deposit`);
+  };
 
+  const handleDeliverWork = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeConv || activeConv.type !== 'contract' || !user) return;
+    
+    setDeliveryUploading(true);
+    try {
+      let fileUrl = null;
+      let fileType = null;
+      
+      if (deliveryFile) {
+        const fileExt = deliveryFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${activeConv.rawId}/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('message_attachments')
+          .upload(filePath, deliveryFile);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('message_attachments')
+          .getPublicUrl(filePath);
+          
+        fileUrl = publicUrl;
+        fileType = deliveryFile.type;
+      }
+      
+      // Update contract to mark work as submitted
+      const { error: contractErr } = await supabase
+        .from('contracts')
+        .update({
+           work_submitted_at: new Date().toISOString(),
+           submission_notes: deliveryNotes
+        })
+        .eq('id', activeConv.rawId);
+        
+      if (contractErr) throw contractErr;
+      
+      // Send a delivery_submission message
+      const payload: any = {
+        sender_id: user.id,
+        contract_id: activeConv.rawId,
+        message_type: 'delivery_submission',
+        content: deliveryNotes || 'Work has been submitted for review.',
+        metadata: {
+           event: 'work_delivered'
+        }
+      };
+      if (fileUrl) {
+         payload.file_url = fileUrl;
+         payload.file_type = fileType;
+      }
+      
+      const { error: msgErr } = await supabase.from('messages').insert(payload);
+      if (msgErr) throw msgErr;
+      
+      setShowDeliveryModal(false);
+      setDeliveryNotes('');
+      setDeliveryFile(null);
+      await fetchConversations(); // refresh contract status
+    } catch (err) {
+      console.error(err);
+      alert('Failed to deliver work');
+    } finally {
+      setDeliveryUploading(false);
+    }
+  };
+
+  const handleRequestRevision = async (contractId: string) => {
+    if (!user) return;
+    try {
+      const { error: contractErr } = await supabase
+        .from('contracts')
+        .update({
+           work_submitted_at: null, // clear submission
+           submission_notes: null
+        })
+        .eq('id', contractId);
+      if (contractErr) throw contractErr;
+
+      // Send system message
+      await supabase.from('messages').insert({
+        sender_id: user.id,
+        contract_id: contractId,
+        message_type: 'system_event',
+        content: 'Revision requested by client.',
+        metadata: { event: 'revision_requested' }
+      });
+      
       await fetchConversations();
     } catch (err) {
       console.error(err);
-      alert('Failed to hire freelancer');
-    } finally {
-      setHiring(false);
+      alert('Failed to request revision');
     }
+  };
+
+  const handleApproveAndPay = (contractId: string) => {
+     navigate(`/checkout?contract_id=${contractId}&type=final`);
   };
 
   const activeConv = conversations.find(c => c.id === activeConversationId);
@@ -531,13 +632,28 @@ export function Messages() {
                 </p>
               </div>
               {role === 'client' && activeConv.type === 'proposal' && activeConv.status !== 'accepted' && (
-                <Button 
-                  onClick={handleHireFreelancer}
-                  disabled={hiring}
-                  className="bg-accent text-white hover:bg-accent-hover"
-                >
-                  {hiring ? 'Hiring...' : 'Hire Freelancer'}
-                </Button>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-accent">€{activeConv.proposalData?.deposit_required} Deposit</div>
+                    <div className="text-xs text-text-secondary">Quote: €{activeConv.proposalData?.proposed_rate}</div>
+                  </div>
+                  <Button 
+                    onClick={handleHireFreelancer}
+                    className="bg-accent text-white hover:bg-accent-hover"
+                  >
+                    Hire & Fund Escrow
+                  </Button>
+                </div>
+              )}
+              {role === 'freelancer' && activeConv.type === 'contract' && activeConv.contractData?.status === 'active' && activeConv.contractData?.escrow_status === 'funded' && !activeConv.contractData?.work_submitted_at && (
+                 <Button onClick={() => setShowDeliveryModal(true)} className="bg-accent text-white">
+                   Deliver Work
+                 </Button>
+              )}
+              {activeConv.type === 'contract' && activeConv.contractData?.status === 'active' && activeConv.contractData?.work_submitted_at && (
+                 <div className="px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-full font-medium text-sm border border-yellow-200">
+                   In Review
+                 </div>
               )}
             </div>
 
@@ -559,6 +675,67 @@ export function Messages() {
 
               {messages.map(msg => {
                 const isMine = msg.sender_id === user?.id;
+
+                if (msg.message_type === 'system_event') {
+                   return (
+                     <div key={msg.id} className="flex justify-center my-4">
+                       <div className="bg-surface text-text-secondary px-4 py-2 rounded-full text-xs font-medium border border-border shadow-sm flex items-center gap-2">
+                         <CheckCircle size={14} className="text-accent" />
+                         {msg.content}
+                       </div>
+                     </div>
+                   );
+                }
+
+                if (msg.message_type === 'delivery_submission') {
+                   return (
+                     <div key={msg.id} className="my-6 mx-auto w-full max-w-lg border border-accent/20 rounded-xl overflow-hidden bg-white shadow-sm">
+                       <div className="bg-accent/5 p-4 border-b border-accent/10 flex items-center gap-3">
+                         <div className="bg-accent text-white p-2 rounded-lg">
+                           <FileText size={20} />
+                         </div>
+                         <div>
+                           <h4 className="font-bold text-accent-dark">Work Delivery Submitted</h4>
+                           <p className="text-xs text-text-secondary">{new Date(msg.created_at).toLocaleString()}</p>
+                         </div>
+                       </div>
+                       <div className="p-4">
+                         <p className="text-text-primary whitespace-pre-wrap mb-4">{msg.content}</p>
+                         
+                         {msg.file_url && (
+                           <div className="bg-surface p-3 rounded-lg flex items-center justify-between mb-4 border border-border">
+                             <div className="flex items-center gap-2 text-sm font-medium">
+                               <Paperclip size={16} />
+                               Attached File
+                             </div>
+                             <a href={msg.file_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline text-sm font-medium">
+                               Download
+                             </a>
+                           </div>
+                         )}
+                         
+                         {!isMine && role === 'client' && activeConv.type === 'contract' && activeConv.contractData?.status === 'active' && activeConv.contractData?.work_submitted_at && (
+                           <div className="flex gap-3 mt-4 pt-4 border-t border-border">
+                             <Button 
+                               variant="outline" 
+                               className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                               onClick={() => handleRequestRevision(activeConv.rawId)}
+                             >
+                               Request Revision
+                             </Button>
+                             <Button 
+                               className="flex-1 bg-green-600 hover:bg-green-700 text-white border-transparent"
+                               onClick={() => handleApproveAndPay(activeConv.rawId)}
+                             >
+                               Approve & Pay
+                             </Button>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   );
+                }
+
                 return (
                   <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${
@@ -667,6 +844,55 @@ export function Messages() {
           </div>
         )}
       </div>
+      
+      {/* Delivery Modal */}
+      {showDeliveryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+            <h3 className="text-xl font-bold font-tenor mb-4">Deliver Work</h3>
+            <p className="text-text-secondary mb-6 text-sm">
+              Submit your final work or milestone for the client to review. They will be notified immediately.
+            </p>
+            
+            <form onSubmit={handleDeliverWork}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-text-primary mb-2">Delivery Notes / Message</label>
+                <textarea 
+                  className="w-full rounded-lg border-border focus:border-accent focus:ring-accent text-sm"
+                  rows={4}
+                  required
+                  value={deliveryNotes}
+                  onChange={(e) => setDeliveryNotes(e.target.value)}
+                  placeholder="Describe what you are submitting..."
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-text-primary mb-2">Attach Files (Optional)</label>
+                <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-surface hover:bg-surface-dark transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 mb-3 text-text-muted" />
+                            <p className="mb-2 text-sm text-text-secondary">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            {deliveryFile && <p className="text-xs text-accent font-medium mt-2">{deliveryFile.name}</p>}
+                        </div>
+                        <input type="file" className="hidden" onChange={(e) => setDeliveryFile(e.target.files?.[0] || null)} />
+                    </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="ghost" type="button" onClick={() => setShowDeliveryModal(false)}>Cancel</Button>
+                <Button type="submit" disabled={deliveryUploading || !deliveryNotes.trim()}>
+                  {deliveryUploading ? 'Submitting...' : 'Submit Work'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

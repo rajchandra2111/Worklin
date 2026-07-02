@@ -87,52 +87,22 @@ export function ClientProjectDetails() {
     try {
       const { error } = await supabase.rpc('accept_proposal', { p_proposal_id: proposalId });
       if (error) throw error;
-      await fetchData();
-      setActiveTab('contract');
+      navigate(`/checkout?proposal_id=${proposalId}&type=deposit`);
     } catch (err) {
       console.error('Error accepting proposal:', err);
       alert('Failed to accept proposal.');
-    } finally {
       setProcessing(null);
     }
   };
 
   const handleFundEscrow = async () => {
     if (!contract) return;
-    setProcessing('funding');
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { contractId: contract.id }
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (err) {
-      console.error('Error funding escrow:', err);
-      alert('Failed to initiate payment.');
-    } finally {
-      setProcessing(null);
-    }
+    navigate(`/checkout?proposal_id=${contract.proposal_id}&type=deposit`);
   };
 
   const handleReleasePayment = async () => {
     if (!contract) return;
-    setProcessing('releasing');
-    try {
-      const { data, error } = await supabase.functions.invoke('capture-payment', {
-        body: { contractId: contract.id }
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      
-      await fetchData();
-    } catch (err: any) {
-      console.error('Error releasing payment:', err);
-      alert(`Failed to release payment: ${err.message}`);
-    } finally {
-      setProcessing(null);
-    }
+    navigate(`/checkout?proposal_id=${contract.proposal_id}&type=final`);
   };
 
   const handleCancelProject = async () => {
