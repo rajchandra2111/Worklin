@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
+import { ShareButtons } from '../components/ui/ShareButtons';
 import { Clock, ChevronRight, Mail } from 'lucide-react';
 
 interface BlogPost {
@@ -131,6 +132,11 @@ export function Blog() {
           </div>
         </section>
       )}
+
+      {/* Global Share Section */}
+      <section className="py-12 px-6 max-w-7xl mx-auto border-t border-border mt-8">
+        <ShareButtons url={window.location.href} title="Worklin_ Blog: Insights from the future of work." />
+      </section>
 
       {/* Newsletter CTA */}
       <section className="py-24 px-6 mt-12 bg-primary text-white border-t border-border">

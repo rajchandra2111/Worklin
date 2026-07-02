@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUiStore } from '../store/uiStore';
 import { Clock, ArrowLeft, Heart, MessageSquare, Share2, Send } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { ShareButtons } from '../components/ui/ShareButtons';
 
 interface BlogPost {
   id: string;
@@ -265,6 +266,8 @@ export function BlogPostDetails() {
               <Share2 size={20} /> Share
             </button>
           </div>
+
+          <ShareButtons url={window.location.href} title={post.title} image={post.cover_image} />
         </div>
 
         {/* Comments Section */}
