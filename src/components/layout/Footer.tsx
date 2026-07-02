@@ -61,7 +61,7 @@ export function Footer() {
               <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
               <li><Link to="/affiliates" className="hover:text-accent text-accent transition-colors">Affiliates & Partners</Link></li>
               <li><Link to="/trust" className="hover:text-white transition-colors">Trust & Safety</Link></li>
-              <li><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+              <li><a href="https://blogs.hireworklin.com" className="hover:text-white transition-colors">Blog</a></li>
             </ul>
           </div>
 
