@@ -37,9 +37,9 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-6 uppercase tracking-wider text-sm">For Clients</h4>
             <ul className="space-y-4 text-sm">
               <li><Link to="/client/projects/new" className="hover:text-white transition-colors">Post a Project</Link></li>
-              <li><Link to="/hire" className="hover:text-white transition-colors">Talent Marketplace</Link></li>
-              <li><Link to="/pricing" className="hover:text-white transition-colors">Enterprise Solutions</Link></li>
-              <li><Link to="/how-to-hire" className="hover:text-white transition-colors">How to Hire</Link></li>
+              <li><Link to="/trust" className="hover:text-white transition-colors">Trust & Safety</Link></li>
+              <li><a href="https://blogs.hireworklin.com" className="hover:text-white transition-colors">Blog</a></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
             </ul>
           </div>
 
