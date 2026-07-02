@@ -107,7 +107,7 @@ export function Blog() {
               <Link key={post.id} to={`/blog/${post.slug}`} className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow h-full">
                 <div className="aspect-16/10 overflow-hidden">
                   <img 
-                    src={post.cover_image || 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?auto=format&fit=crop&w=800&q=80'} 
+                    src={post.cover_image || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80'}
                     alt={post.title} 
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />

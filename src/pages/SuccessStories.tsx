@@ -13,7 +13,7 @@ export function SuccessStories() {
       challenge: "Needed to accelerate their MVP launch timeframe by 3 months to secure seed funding, but lacked in-house frontend expertise.",
       solution: "Hired a vetted React developer on Worklin_ within 48 hours. Used our secure milestones to manage a 6-week sprint.",
       result: "MVP launched 2 weeks ahead of the new schedule. Secured $1.5M in seed funding.",
-      image: "https://images.unsplash.com/photo-1556761175-5973dc0f32d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
     },
     {
       client: "EcoStyle E-Commerce",
