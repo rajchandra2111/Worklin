@@ -355,7 +355,7 @@ export function ProjectDetails() {
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-text-primary">Add relative files (optional)</label>
                   <div className="flex flex-wrap gap-3">
-                    {proposalData.attachments.map((url, idx) => (
+                    {proposalData.attachments.map((_, idx) => (
                       <div key={idx} className="flex items-center gap-2 bg-surface px-3 py-1.5 rounded-lg border border-border text-sm">
                         <FileIcon size={14} className="text-accent" />
                         <span className="truncate max-w-[150px]">Attachment {idx + 1}</span>
